@@ -1,4 +1,6 @@
 ﻿using System.Net.Http.Json;
+using System.Configuration;
+using System.Net.NetworkInformation;
 
 namespace Daemon
 {
@@ -6,13 +8,13 @@ namespace Daemon
     {
         static void Main(string[] args) //static async Task Main(string[] args)
 		{
-            Registration registration = new Registration();
+            
+			
 
+			Registration registration = new Registration();
 
-            if (registration.CheckFileIntegrity() == true)
-                registration.Identify();
-            else
-                registration.Register();
+            //registration.Register();
+
 
 
             //HttpResponseMessage reportMessageGet = await client.GetAsync("/api/Report");

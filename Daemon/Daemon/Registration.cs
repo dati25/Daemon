@@ -5,41 +5,74 @@ using System.Net.Http.Json;
 using System.Net.NetworkInformation;
 using System.Text;
 using System.Threading.Tasks;
+using System.Configuration;
+using System.Security.Cryptography.X509Certificates;
 
 namespace Daemon
 {
 	public class Registration
 	{
 		private NetworkInterface networkInterface;
-		private string MAC;
-		private int idPC;
+		private Client client = new Client();
+		public int? PCId;
 
-		public void Register()
+		public Registration()
+		{
+			CheckLocalID();
+		}
+		public async void Register()
 		{
 			// Čtení dat, přiřazení ID
+			Console.WriteLine("How did we get here");
 
-			File.WriteAllText(@"C:\Users\FooBakCup\Config.fbc", idPC.ToString()); // později asi streamwriter ted jenom tohle
+			HttpResponseMessage computersMessageGet = await client.httpClient.GetAsync($"/api/Computer/{PCId}");
+			string computerData = await computersMessageGet.Content.ReadAsStringAsync();
+			Console.WriteLine(computerData);
+
+			
+
 		}
 		public void Identify() 
 		{
-			
+			Console.WriteLine(PCId);
 			
 			// metoda GetConfig
 			
 		}
 
-		public bool CheckFileIntegrity()
+		private void CheckLocalID()
 		{
-			try
+			this.ReadPCId("PCId");
+			if (this.PCId == null)
 			{
-				this.idPC = Convert.ToInt16(File.ReadAllText(@"C:\Users\FooBakCup\Config.fbc")); // později streamreader, ktery to převede z jsonu nebo něco
-			}
-			catch (Exception)
-			{
-				return false;
+				Identify();
+				return;
 			}
 
-			return true;
+			Register();
+		}
+
+		private void ReadPCId(string key)
+		{
+			var appSettings = ConfigurationManager.AppSettings;
+			this.PCId = Convert.ToInt32(appSettings[key] ?? null);
+		}
+
+		private void UploadPCId(string key, string value)
+		{
+			var configFile = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
+			var settings = configFile.AppSettings.Settings;
+			if (settings[key] == null)
+			{
+				settings.Add(key, value);
+			}
+			else // pokud se id bude updatovat
+			{
+				settings[key].Value = value;
+			}
+
+			configFile.Save(ConfigurationSaveMode.Modified);
+			ConfigurationManager.RefreshSection(configFile.AppSettings.SectionInformation.Name);
 		}
 	}
 }
