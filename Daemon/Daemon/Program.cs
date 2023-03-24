@@ -1,7 +1,8 @@
 ﻿using System.Net.Http.Json;
 using System.Configuration;
 using System.Net.NetworkInformation;
-
+using Daemon.Commands;
+using Daemon.Models;
 namespace Daemon
 {
     internal class Program
@@ -11,11 +12,9 @@ namespace Daemon
             
 			
 
-			Registration registration = new Registration();
+			//Registration registration = new Registration();
 
             //registration.Register();
-
-
 
             //HttpResponseMessage reportMessageGet = await client.GetAsync("/api/Report");
             //string reportData = await reportMessageGet.Content.ReadAsStringAsync();
@@ -23,6 +22,10 @@ namespace Daemon
 
             //Report report = new() {  idPC = 1, Status = false, ReportTime = DateTime.Now, Description = "Prvni report"};
             //await client.PostAsJsonAsync<Report>("/api/Report", report);
+
+            GetConfig getConfig = new GetConfig();
+
+            List<Config> configs = getConfig.GetDeserializedConfigs(50);
 
         }
     }

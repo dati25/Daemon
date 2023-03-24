@@ -6,14 +6,15 @@ using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Daemon.Models;
-namespace Daemon.GetCommands
+
+namespace Daemon.Commands
 {
     public class GetConfig
     {
         Client client = new Client();
         public async Task<List<Config>> GetAsyncConfigs(int idPC)
         {
-            string result = await this.client.httpClient.GetStringAsync($"/api/Config");
+            string result = await client.httpClient.GetStringAsync($"/api/Config");
             List<Config> configs = JsonConvert.DeserializeObject<List<Config>>(result);
             return configs;
         }
