@@ -16,16 +16,16 @@ namespace Daemon
                             ni.NetworkInterfaceType != NetworkInterfaceType.Loopback &&
                             ni.GetIPv4Statistics().UnicastPacketsReceived > 0);
 
-        //    if (networkInterface == null)
-        //        return null;
+            if (networkInterface == null)
+                return null;
 
-        //    PhysicalAddress? physicalAddress;
-        //    System.Net.IPAddress? ipv4Address;
+            PhysicalAddress? physicalAddress;
+            System.Net.IPAddress? ipv4Address;
 
-        //    physicalAddress = networkInterface.GetPhysicalAddress();
-        //    var ipProperties = networkInterface.GetIPProperties();
-        //    ipv4Address = ipProperties.UnicastAddresses
-        //        .FirstOrDefault(a => a.Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)?.Address;
+            physicalAddress = networkInterface.GetPhysicalAddress();
+            var ipProperties = networkInterface.GetIPProperties();
+            ipv4Address = ipProperties.UnicastAddresses
+                .FirstOrDefault(a => a.Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)?.Address;
 
 
 

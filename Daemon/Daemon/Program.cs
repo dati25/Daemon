@@ -13,7 +13,7 @@ namespace Daemon
             //var settings = configFile.AppSettings.Settings;
             //settings["PcId"].Value = null;
 
-            Registration registration = new Registration();
+            //Registration registration = new Registration();
 
             //registration.Register();
 
@@ -24,9 +24,10 @@ namespace Daemon
             //Report report = new() {  idPC = 1, Status = false, ReportTime = DateTime.Now, Description = "Prvni report"};
             //await client.PostAsJsonAsync<Report>("/api/Report", report);
 
-            GetConfig getConfig = new GetConfig();
+            Application app = new Application();
+            app.Execute();
 
-            List<Config> configs = getConfig.GetDeserializedConfigs(50);
+
 
         }
     }

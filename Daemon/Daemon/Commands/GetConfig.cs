@@ -14,7 +14,7 @@ namespace Daemon.Commands
         Client client = new Client();
         public async Task<List<Config>> GetAsyncConfigs(int idPC)
         {
-            string result = await client.httpClient.GetStringAsync($"/api/Config");
+            string result = await client.httpClient.GetStringAsync($"/api/Config/");
             List<Config> configs = JsonConvert.DeserializeObject<List<Config>>(result);
             return configs;
         }
