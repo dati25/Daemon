@@ -1,14 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Daemon.Models
 {
+    [Table("tbTasks")]
     public class Job
     {
-        public int id {  get; set; }
-        public int idPC { get; set; }
+        public int Id { get; set; }
+        public int IdPc { get; set; }
+        public int? IdConfig { get; set; }
     }
 }

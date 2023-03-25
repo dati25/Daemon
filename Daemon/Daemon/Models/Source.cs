@@ -1,14 +1,18 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Daemon.Models
 {
+    [Table("tbSources")]
     public class Source
     {
-        public int id { get; set; }
+        public int Id { get; set; }
+        public int? IdConfig { get; set; }
         public string Path { get; set; }
+
+        public Source(int? idConfig, string path)
+        {
+            IdConfig = idConfig;
+            Path = path;
+        }
     }
 }

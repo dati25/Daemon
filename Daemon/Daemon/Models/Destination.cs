@@ -1,15 +1,20 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Daemon.Models
 {
+    [Table("tbDestinations")]
     public class Destination
     {
-        public int id { get; set; }
-        public bool Type { get; set; } //false = fileSystem ; true = FTP
+        public int Id { get; set; }
+        public int? IdConfig { get; set; }
         public string Path { get; set; }
+        public string Type { get; set; }
+
+        public Destination(int? idConfig, string path, string type)
+        {
+            IdConfig = idConfig;
+            Path = path;
+            Type = type;
+        }
     }
 }

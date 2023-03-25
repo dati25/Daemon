@@ -1,15 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations.Schema;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Daemon.Models
 {
+    [Table("tbConfigs")]
     public class Config
     {
-        public int id { get; set; }
+        public int Id { get; set; }
         public string Type { get; set; }
         public string? RepeatPeriod { get; set; }
         public DateTime? ExpirationDate { get; set; }
@@ -18,11 +14,24 @@ namespace Daemon.Models
         public int? PackageSize { get; set; }
         public int CreatedBy { get; set; }
         public bool? Status { get; set; }
-        public List<Source>? Sources { get; set; } = new List<Source>();
-        public List<Destination>? Destinations { get; set; } = new List<Destination>();
-        public List<Job>? Jobs { get; set; } = new List<Job>();
+        [ForeignKey("IdConfig")] internal List<Source>? Sources { get; set; }
+        [ForeignKey("IdConfig")] internal List<Destination>? Destinations { get; set; }
+        [ForeignKey("IdConfig")] internal List<Job>? Jobs { get; set; }
 
+        public Config(string type, string? repeatPeriod, DateTime? expirationDate, bool? compress, int? retention, int? packageSize, int createdBy, bool? status, List<Source>? sources, List<Destination> destinations, List<Job> jobs)
+        {
+            Type = type;
+            RepeatPeriod = repeatPeriod;
+            ExpirationDate = expirationDate;
+            Compress = compress;
+            Retention = retention;
+            PackageSize = packageSize;
+            CreatedBy = createdBy;
+            Status = status;
 
-
+            Sources = sources;
+            Destinations = destinations;
+            Jobs = jobs;
+        }
     }
 }
