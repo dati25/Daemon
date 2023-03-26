@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Daemon.Backup.Services.BackupTypes
+namespace Daemon.Backup.BackupTypes
 {
     public class DiffBackup : IBackup
     {

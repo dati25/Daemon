@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Daemon.Backup.Services.BackupTypes
+namespace Daemon.Backup.BackupTypes
 {
     public abstract class IBackup
     {
@@ -14,7 +14,7 @@ namespace Daemon.Backup.Services.BackupTypes
 
 
 
-        public void CheckSnapshot(string path, int idConfig)
+        public void SnapshotExists(string path, int idConfig)
         {
             // Check jestli snapshot
             // if false - vytvori ho

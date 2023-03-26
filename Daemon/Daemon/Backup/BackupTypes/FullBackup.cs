@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Daemon.Backup.Services.BackupTypes
+namespace Daemon.Backup.BackupTypes
 {
     public class FullBackup : IBackup
     {
@@ -16,18 +16,18 @@ namespace Daemon.Backup.Services.BackupTypes
         }
         public void Execute()
         {
-            string defaultDirPath = @$"{config.Destinations.First().Path}\FooBakCup\Backup_{config.id}";
+            string defaultDirPath = @$"{config.Destinations.First().Path}\FooBakCup\Backup_{config.Id}";
 
-            string dirPath = String.Join(@"\", defaultDirPath, GetLastBackupNumber(defaultDirPath));
+            string dirPath = string.Join(@"\", defaultDirPath, GetLastBackupNumber(defaultDirPath));
             Directory.CreateDirectory(dirPath);
 
-            this.CheckSnapshot(defaultDirPath, config.id);
+            SnapshotExists(defaultDirPath, config.Id);
 
             config.Sources.ForEach(source => DoBackup(source.Path, dirPath, true));
 
             for (int i = 1; i < config.Destinations.Count; i++)
             {
-                DoBackup(defaultDirPath, @$"{config.Destinations.First().Path}\FooBakCup\Backup_{config.id}", false);
+                DoBackup(defaultDirPath, @$"{config.Destinations.First().Path}\FooBakCup\Backup_{config.Id}", false);
             }
         }
         private void DoBackup(string sourcePath, string dirPath, bool first)

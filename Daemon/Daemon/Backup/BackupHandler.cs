@@ -1,4 +1,4 @@
-﻿using Daemon.Backup.Services.BackupTypes;
+﻿using Daemon.Backup.BackupTypes;
 using Daemon.Models;
 using System;
 using System.Collections.Generic;
@@ -11,29 +11,30 @@ namespace Daemon.Backup
 {
     public class BackupHandler
     {
+        private Client client = new Client();
         private List<Config> configs;
         public BackupHandler()
         {
-            //Getting configs
+            configs = this.client.GetConfigs();
         }
 
         public void Begin()
         {
             foreach (var config in configs)
             {
-                this.DistributeConfigs(config.Type.ToLower());
+                this.DistributeConfigs(config);
             }
 
         }
-        public void DistributeConfigs(string type)
+        public void DistributeConfigs(Config config)
         {
-            switch (type)
+            switch (config.Type.ToLower())
             {
                 case "full":
 
-                    FullBackup full = new FullBackup(new Config());
-
+                    FullBackup full = new FullBackup(config);
                     full.Execute();
+
                     break;
                 case "diff":
 
