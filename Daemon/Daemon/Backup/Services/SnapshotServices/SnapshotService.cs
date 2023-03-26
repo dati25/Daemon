@@ -16,7 +16,7 @@ namespace Daemon.Backup.Services.SnapshotServices
                 while (sr.EndOfStream)
                 {
                     string[] strings = sr.ReadLine().Split('|');
-                    snaps.Add(new SnappedFile(strings[0], strings[1], DateTime.Parse(strings[2])));
+                    snaps.Add(new SnappedFile(strings[0], DateTime.Parse(strings[1])));
                 }
             }
             return snaps;

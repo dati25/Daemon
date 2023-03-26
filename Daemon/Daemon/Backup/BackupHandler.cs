@@ -12,14 +12,18 @@ namespace Daemon.Backup
     public class BackupHandler
     {
         private Client client = new Client();
-        private List<Config> configs;
+        private List<Config>? configs;
         public BackupHandler()
         {
-            configs = this.client.GetConfigs();
+            configs = this.client.GetConfigs(client.GetPcId().GetAwaiter().GetResult()).GetAwaiter().GetResult();
         }
 
         public void Begin()
         {
+            if (configs == null)
+            {
+                return;
+            }
             foreach (var config in configs)
             {
                 this.DistributeConfigs(config);

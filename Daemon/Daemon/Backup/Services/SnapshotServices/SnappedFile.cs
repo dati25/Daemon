@@ -11,7 +11,6 @@ namespace Daemon.Backup.Services.SnapshotServices
         public string FullPath { get; set; }
         public DateTime LastDateModified { get; set; }
 
-
         public SnappedFile(string fullPath, DateTime lastDateModified)
         {
             FullPath = fullPath;

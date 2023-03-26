@@ -9,17 +9,29 @@ namespace Daemon.Backup.Services
 {
     public class FilesService
     {
+        private StreamWriter sr;
+        
         public void Copy(string sourcePath, string destPath)
         {
-            string name = Path.GetFileName(sourcePath);
+			this.sr = new StreamWriter(destPath + @"\.snapshot\snapshot.txt");
+			string name = Path.GetFileName(sourcePath);
             if (File.Exists(sourcePath))
             {
                 File.Copy(sourcePath, String.Join(@"\", destPath, name), true);
+                WriteToSnapshot(sourcePath, destPath);
                 return;
             }
             this.CopyDir(sourcePath, destPath, name);
+            sr.Close();
         }
-        private void CopyDir(string fullPath, string destPath, string name)
+
+        private void WriteToSnapshot(string sourcePath, string destPath)
+        {
+			FileInfo fi = new FileInfo(sourcePath);
+			sr.WriteLine(sourcePath + '|' + fi.LastWriteTime);
+		}
+
+		private void CopyDir(string fullPath, string destPath, string name)
         {
             DirectoryInfo dir = new DirectoryInfo(fullPath);
             DirectoryInfo[] directories = dir.GetDirectories();
@@ -28,7 +40,7 @@ namespace Daemon.Backup.Services
             foreach (FileInfo filItem in fils)
             {
                 File.Copy(filItem.FullName, String.Join(@"\", destPath, name, filItem.Name));
-                
+                WriteToSnapshot(fullPath, destPath);
             }
             foreach (DirectoryInfo dirItem in directories)
             {
@@ -79,10 +91,6 @@ namespace Daemon.Backup.Services
                 DelDir(dirItem.FullName);
             }
             File.Delete(fullPath);
-        }
-        private void IncludeInSnapShot()
-        {
-
         }
 
     }
