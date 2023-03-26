@@ -13,7 +13,7 @@ namespace Daemon.Backup.Services
         
         public void Copy(string sourcePath, string destPath)
         {
-			this.sr = new StreamWriter(destPath + @"\snapshot.txt");
+			this.sr = new StreamWriter(destPath + @"\.snapshot\snapshot.txt");
 			string name = Path.GetFileName(sourcePath);
             if (File.Exists(sourcePath))
             {

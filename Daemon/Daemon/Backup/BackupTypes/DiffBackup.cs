@@ -16,7 +16,7 @@ namespace Daemon.Backup.BackupTypes
         }
         public void Execute()
         {
-            string defaultDirPath = @$"{config.Destinations.First().Path}\FooBakCup\Backup_{config.Id}";
+            string defaultDirPath = @$"{config.Destinations.First().Path}\FooBakCup\config_{config.Id}";
             string dirPath = string.Join(@"\", defaultDirPath, GetLastBackupNumber(defaultDirPath));
 
 
