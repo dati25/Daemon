@@ -14,11 +14,10 @@ namespace Daemon.Models
         public int? PackageSize { get; set; }
         public int CreatedBy { get; set; }
         public bool? Status { get; set; }
-        [ForeignKey("IdConfig")] internal List<Source>? Sources { get; set; }
-        [ForeignKey("IdConfig")] internal List<Destination>? Destinations { get; set; }
-        [ForeignKey("IdConfig")] internal List<Job>? Jobs { get; set; }
+        [ForeignKey("IdConfig")] public List<Source>? Sources { get; set; }
+        [ForeignKey("IdConfig")] public List<Destination>? Destinations { get; set; }
 
-        public Config(string type, string? repeatPeriod, DateTime? expirationDate, bool? compress, int? retention, int? packageSize, int createdBy, bool? status, List<Source>? sources, List<Destination> destinations, List<Job> jobs)
+        public Config(string type, string? repeatPeriod, DateTime? expirationDate, bool? compress, int? retention, int? packageSize, int createdBy, bool? status, List<Source>? sources, List<Destination> destinations)
         {
             Type = type;
             RepeatPeriod = repeatPeriod;
@@ -31,7 +30,6 @@ namespace Daemon.Models
 
             Sources = sources;
             Destinations = destinations;
-            Jobs = jobs;
         }
     }
 }

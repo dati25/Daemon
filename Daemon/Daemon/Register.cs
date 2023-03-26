@@ -14,12 +14,10 @@ namespace Daemon
 
         public async Task RegisterPC()
         {
-            Pc? pc = await c.GetPcId();
-            List<Config>? configs = await c.GetConfigs(pc);
-
             Settings s = new Settings();
-            s.SaveId(pc);
-            s.SaveConfig(configs);
+
+            Pc? pc = s.SavePc(await c.GetPc());
+            List<Config>? configs = s.SaveConfig(await c.GetConfigs(pc));
         }
     }
 }

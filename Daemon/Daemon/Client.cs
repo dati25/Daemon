@@ -9,7 +9,7 @@ namespace Daemon
     {
         HttpClient client = new HttpClient { BaseAddress = new Uri("http://localhost:5105/") };
 
-        public async Task<Pc?> GetPcId()
+        public async Task<Pc?> GetPc()
         {
             var networkInterface = NetworkInterface.GetAllNetworkInterfaces()
             .FirstOrDefault(ni => ni.OperationalStatus == OperationalStatus.Up &&
@@ -28,16 +28,20 @@ namespace Daemon
                 .FirstOrDefault(a => a.Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)?.Address;
 
 
-            HttpResponseMessage response = await client.PostAsJsonAsync(client.BaseAddress + "api/Computer", new Computer(physicalAddress.ToString(), ipv4Address!.ToString(), Environment.MachineName));
+            try
+            {
+                HttpResponseMessage response = await client.PostAsJsonAsync(client.BaseAddress + "api/Computer", new Computer(physicalAddress.ToString(), ipv4Address!.ToString(), Environment.MachineName));
 
-            string content = response.Content.ReadAsStringAsync().Result;
+                string content = response.Content.ReadAsStringAsync().Result;
 
-            Pc? pc = JsonConvert.DeserializeObject<Pc>(content);
+                Pc? pc = JsonConvert.DeserializeObject<Pc>(content);
 
-            if (pc == null)
-                return null;
+                if (pc == null)
+                    return null;
 
-            return pc;
+                return pc;
+            }
+            catch { return null; }
         }
 
         public async Task<List<Config>?> GetConfigs(Pc? pc)
@@ -71,16 +75,20 @@ namespace Daemon
         {
             if (pc == null) return null;
 
-            HttpResponseMessage response = await client.GetAsync(client.BaseAddress + "api/tasks/" + pc.idPc);
+            try
+            {
+                HttpResponseMessage response = await client.GetAsync(client.BaseAddress + "api/tasks/" + pc.idPc);
 
-            string content = response.Content.ReadAsStringAsync().Result;
+                string content = response.Content.ReadAsStringAsync().Result;
 
-            List<int>? configs = JsonConvert.DeserializeObject<List<int>>(content);
+                List<int>? configs = JsonConvert.DeserializeObject<List<int>>(content);
 
-            if (configs == null)
-                return null;
+                if (configs == null)
+                    return null;
 
-            return configs;
+                return configs;
+            }
+            catch { return null; }
         }
     }
 }
