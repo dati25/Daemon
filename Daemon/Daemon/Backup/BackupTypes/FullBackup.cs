@@ -27,7 +27,7 @@ namespace Daemon.Backup.BackupTypes
 
             for (int i = 1; i < config.Destinations.Count; i++)
             {
-                DoBackup(defaultDirPath, @$"{config.Destinations.First().Path}\FooBakCup\Backup_{config.Id}", false);
+                DoBackup(defaultDirPath, @$"{config.Destinations[i].Path}\FooBakCup\Backup_{config.Id}", false);
             }
         }
         private void DoBackup(string sourcePath, string dirPath, bool first)
