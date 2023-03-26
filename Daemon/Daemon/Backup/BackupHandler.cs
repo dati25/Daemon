@@ -15,7 +15,7 @@ namespace Daemon.Backup
         private List<Config>? configs;
         public BackupHandler()
         {
-            configs = this.client.GetConfigs(client.GetPcId().GetAwaiter().GetResult()).GetAwaiter().GetResult();
+            configs = this.client.GetConfigs(client.GetPc().GetAwaiter().GetResult()).GetAwaiter().GetResult();
         }
 
         public void Begin()
