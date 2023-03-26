@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Daemon.Backup.BackupTypes
 {
-    public abstract class IBackup
+    public class BackupService
     {
         protected FilesService files = new FilesService();
 
@@ -23,6 +23,19 @@ namespace Daemon.Backup.BackupTypes
                 return;
 
             File.Create($@"{path}\snapshot_{idConfig}.bbc");
+        }
+        public int GetLastBackupNumber(string path)
+        {
+            DirectoryInfo dir = new DirectoryInfo(path);
+
+
+            List<DirectoryInfo> dirs = dir.GetDirectories().ToList();
+            if (dirs.Count == 0)
+                return 0;
+
+            string name = dirs.Last().Name;
+
+            return int.Parse(name.Substring(name.LastIndexOf('_')));
         }
     }
 }

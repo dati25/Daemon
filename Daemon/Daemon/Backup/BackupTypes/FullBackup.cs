@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Daemon.Backup.BackupTypes
 {
-    public class FullBackup : IBackup
+    public class FullBackup : BackupService
     {
         private Config config { get; set; }
         public FullBackup(Config config)
@@ -17,11 +17,11 @@ namespace Daemon.Backup.BackupTypes
         public void Execute()
         {
             string defaultDirPath = @$"{config.Destinations.First().Path}\FooBakCup\Backup_{config.Id}";
-
             string dirPath = string.Join(@"\", defaultDirPath, GetLastBackupNumber(defaultDirPath));
+
             Directory.CreateDirectory(dirPath);
 
-            SnapshotExists(defaultDirPath, config.Id);
+            SnapshotExists(dirPath, config.Id);
 
             config.Sources.ForEach(source => DoBackup(source.Path, dirPath, true));
 
@@ -35,7 +35,7 @@ namespace Daemon.Backup.BackupTypes
             files.Copy(sourcePath, dirPath);
             if (first)
             {
-                //zapise do snapshotu
+                
             }
         }
         private void BackupDestination(string defaultDirPath, string destPath)

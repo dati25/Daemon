@@ -9,6 +9,9 @@ namespace Daemon
         {
             Register r = new Register();
             await r.RegisterPC();
+
+            //Application app = new Application();
+            //app.Execute();
         }
     }
 }
