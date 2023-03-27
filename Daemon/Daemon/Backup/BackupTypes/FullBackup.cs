@@ -1,60 +1,43 @@
 ﻿using Daemon.Models;
-using System;
-using System.Collections.Generic;
 using System.IO.Compression;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace Daemon.Backup.BackupTypes
+namespace Daemon.Backup.BackupTypes;
+
+public class FullBackup : BackupService
 {
-    public class FullBackup : BackupService
+    private string defaultDirPath;
+    private Config config { get; set; }
+
+    public FullBackup(Config config)
     {
-        private string defaultDirPath;
-        private Config config { get; set; }
-        public FullBackup(Config config)
-        {
-            this.config = config;
-			this.defaultDirPath = @$"{config.Destinations.First().Path}\FooBakCup\config_{config.Id}";
-		}
-        public void Execute()
-        {
-            string dirPath = string.Join(@"\", defaultDirPath, "backup_"+GetLastBackupNumber(defaultDirPath));
-			Directory.CreateDirectory(dirPath);
+        this.config = config;
+        this.defaultDirPath = @$"{config.Destinations!.First().Path}\FooBakCup\config_{config.Id}";
+    }
 
-            SnapshotExists(dirPath, config.Id);
+    public void Execute()
+    {
+        string dirPath = Path.Combine(defaultDirPath, "backup_" + GetBackupNumber(defaultDirPath, config));
+        Directory.CreateDirectory(dirPath);
 
-            config.Sources.ForEach(source => DoBackup(source.Path, dirPath, true));
-			CompressFiles(dirPath);
+        config.Sources!.ForEach(source => files.Copy(source.Path, dirPath));
 
-            BackupDestinations();
-		}
-        private void DoBackup(string sourcePath, string dirPath, bool first)
+        if (config.Compress == true)
         {
-            files.Copy(sourcePath, dirPath);
+            ZipFile.CreateFromDirectory(dirPath, dirPath + ".zip");
+            Directory.Delete(dirPath, true);
         }
 
-        private void BackupDestinations()
+        for (int i = 1; i < config.Destinations!.Count; i++)
         {
-			for (int i = 1; i < config.Destinations.Count; i++)
-			{
-				string dest = $@"{config.Destinations[i].Path}\FooBakCup\config_{config.Id}";
-				if (config.Compress == true)
-                    dest += ".zip";
+            string dest = $@"{config.Destinations[i].Path}\FooBakCup";
 
-			    files.Copy(defaultDirPath, dest);
-				
-			}
-		}
+            DirectoryInfo d = new DirectoryInfo(dest);
+            d.Create();
 
-        private void CompressFiles(string dirPath)
-        {
-            if (config.Compress == true)
-            {
-                ZipFile.CreateFromDirectory(dirPath, dirPath + ".zip");
-                Directory.Delete(dirPath, true);
-            }
+            d.GetDirectories().ToList().ForEach(item => item.Delete(true));
+            d.GetFiles().ToList().ForEach(item => item.Delete());
+
+            files.Copy(defaultDirPath, dest);
         }
-
     }
 }

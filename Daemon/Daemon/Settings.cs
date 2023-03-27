@@ -28,7 +28,7 @@ namespace Daemon
             return pc;
         }
 
-        public List<Config>? SaveConfig(List<Config>? configs)
+        public List<Config>? SaveConfigs(List<Config>? configs)
         {
             if (configs == null) return ReadConfigs();
 
@@ -94,6 +94,17 @@ namespace Daemon
                 json = json.Remove(json.LastIndexOf(']'));
                 return JsonConvert.DeserializeObject<List<Config>>(json);
             }
+        }
+
+        public void Update(Pc? pc, List<Config>? configs)
+        {
+            if (pc == null || configs == null) return;
+
+            File.Delete(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "FooBakCup", "settings.json"));
+            File.Create(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "FooBakCup", "settings.json")).Close();
+
+            SavePc(pc);
+            SaveConfigs(configs);
         }
     }
 }

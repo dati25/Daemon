@@ -1,53 +1,40 @@
 ﻿using Daemon.Backup.BackupTypes;
 using Daemon.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Http.Headers;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace Daemon.Backup
+namespace Daemon.Backup;
+
+public class BackupHandler
 {
-    public class BackupHandler
+    private Client client = new Client();
+    private List<Config>? configs;
+
+    public BackupHandler()
     {
-        private Client client = new Client();
-        private List<Config>? configs;
-        public BackupHandler()
+        configs = client.GetConfigs(client.GetPc().GetAwaiter().GetResult()).GetAwaiter().GetResult();
+    }
+
+    public void Begin()
+    {
+        if (configs == null) return;
+
+        foreach (var config in configs)
+            this.DistributeConfigs(config);
+    }
+
+    public void DistributeConfigs(Config config)
+    {
+        switch (config.Type.ToLower())
         {
-            configs = this.client.GetConfigs(client.GetPc().GetAwaiter().GetResult()).GetAwaiter().GetResult();
-        }
+            case "full":
+                FullBackup full = new FullBackup(config);
+                full.Execute();
+                break;
 
-        public void Begin()
-        {
-            if (configs == null)
-            {
-                return;
-            }
-            foreach (var config in configs)
-            {
-                this.DistributeConfigs(config);
-            }
+            case "diff":
+                break;
 
-        }
-        public void DistributeConfigs(Config config)
-        {
-            switch (config.Type.ToLower())
-            {
-                case "full":
-
-                    FullBackup full = new FullBackup(config);
-                    full.Execute();
-
-                    break;
-                case "diff":
-
-                    break;
-                case "incr":
-
-                    break;
-            }
-
+            case "incr":
+                break;
         }
     }
 }

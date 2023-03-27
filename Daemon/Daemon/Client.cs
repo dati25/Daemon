@@ -27,21 +27,22 @@ namespace Daemon
             ipv4Address = ipProperties.UnicastAddresses
                 .FirstOrDefault(a => a.Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)?.Address;
 
+            if (!Directory.Exists(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "FooBakCup")))
+                try
+                {
+                    HttpResponseMessage response = await client.PostAsJsonAsync(client.BaseAddress + "api/Computer", new Computer(physicalAddress.ToString(), ipv4Address!.ToString(), Environment.MachineName));
 
-            try
-            {
-                HttpResponseMessage response = await client.PostAsJsonAsync(client.BaseAddress + "api/Computer", new Computer(physicalAddress.ToString(), ipv4Address!.ToString(), Environment.MachineName));
+                    string content = response.Content.ReadAsStringAsync().Result;
 
-                string content = response.Content.ReadAsStringAsync().Result;
+                    Pc? pc = JsonConvert.DeserializeObject<Pc>(content);
 
-                Pc? pc = JsonConvert.DeserializeObject<Pc>(content);
+                    if (pc == null)
+                        return null;
 
-                if (pc == null)
-                    return null;
-
-                return pc;
-            }
-            catch { return null; }
+                    return pc;
+                }
+                catch { return null; }
+            else return null;
         }
 
         public async Task<List<Config>?> GetConfigs(Pc? pc)

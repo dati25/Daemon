@@ -17,7 +17,9 @@ namespace Daemon
             Settings s = new Settings();
 
             Pc? pc = s.SavePc(await c.GetPc());
-            List<Config>? configs = s.SaveConfig(await c.GetConfigs(pc));
+            List<Config>? configs = s.SaveConfigs(await c.GetConfigs(pc));
+
+            s.Update(pc, configs);
         }
     }
 }

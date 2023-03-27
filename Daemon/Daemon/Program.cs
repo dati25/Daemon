@@ -1,31 +1,30 @@
 ﻿using Daemon.Backup.BackupTypes;
+using Daemon.Backup;
 using Daemon.Models;
-using Newtonsoft.Json;
 
-namespace Daemon
+namespace Daemon;
+
+internal class Program
 {
-    internal class Program
+    public static async Task Main()
     {
-        public async Task Main()
-        {
-            //Register r = new Register();
-            //await r.RegisterPC();
+        // Register r = new Register();
+        // await r.RegisterPC();
+        await Task.Delay(1);
 
-            //Application app = new Application();
-            //app.Execute();
+        List<Source> sources = new List<Source>();
+        sources.Add(new Source(157, @"C:\Users\shart\Desktop\Source1"));
+        sources.Add(new Source(157, @"C:\Users\shart\Desktop\Source2"));
+        sources.Add(new Source(157, @"C:\Users\shart\Desktop\Source3"));
 
-            // Source source1 = new Source(5, @"C:\FOO");
-            // Destination destination1 = new Destination(5, @"C:\BACK", "lcl");
-            // List<Source> sources = new List<Source>();
-            // List<Destination> destinations = new List<Destination>();
-            // sources.Add(source1);
-            // destinations.Add(destination1);
-            // List<Job> jobs = new List<Job>();
+        List<Destination> destinations = new List<Destination>();
+        destinations.Add(new Destination(157, @"C:\Users\shart\Downloads\Dest1", "lcl"));
+        destinations.Add(new Destination(157, @"C:\Users\shart\Downloads\Dest2", "lcl"));
 
-            // Config config = new Config("Full", "* * * * *",DateTime.Now,true,5,1,1,true,sources,destinations,jobs);
 
-            // FullBackup backup = new FullBackup(config);
-            // backup.Execute();
-        }
+        Config? config = new Config("diff", "* * * * *", DateTime.Now, false, 5, 3, 1, true, sources, destinations) { Id = 157 };
+
+        DiffBackup backup = new DiffBackup(config);
+        backup.Execute();
     }
 }
