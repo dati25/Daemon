@@ -37,7 +37,7 @@ public class DiffBackup : BackupService
         {
             CreateSnapshot(dirPath);
 
-            config.Sources!.ForEach(source => files.CopyWithSnapshot(source.Path, dirPath));
+            config.Sources!.ForEach(source => fs.CopyWithSnapshot(source.Path, dirPath));
         }
 
         else
@@ -55,9 +55,9 @@ public class DiffBackup : BackupService
 
             SnapshotService sn = new SnapshotService();
 
-            List<SnappedFile> snapshot = sn.ReadSnappedFiles(Path.Combine(defaultDirPath, backupPath2, ".snapshot", "snapshot.txt"));
+            List<Snapshot> snapshot = sn.ReadSnapshot(Path.Combine(defaultDirPath, backupPath2, ".snapshot", "snapshot.txt"));
 
-            config.Sources!.ForEach(source => files.CopyWithSnapshotCheck(source.Path, dirPath, snapshot));
+            config.Sources!.ForEach(source => fs.CopyWithSnapshotCheck(source.Path, dirPath, snapshot));
         }
 
 
@@ -78,7 +78,7 @@ public class DiffBackup : BackupService
             d.GetDirectories().ToList().ForEach(item => item.Delete(true));
             d.GetFiles().ToList().ForEach(item => item.Delete());
 
-            files.Copy(defaultDirPath, dest);
+            fs.Copy(defaultDirPath, dest);
         }
     }
 }

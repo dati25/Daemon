@@ -9,6 +9,16 @@ namespace Daemon
     {
         HttpClient client = new HttpClient { BaseAddress = new Uri("http://localhost:5105/") };
 
+        public async Task Register()
+        {
+            Settings s = new Settings();
+
+            Pc? pc = s.SavePc(await GetPc());
+            List<Config>? configs = s.SaveConfigs(await GetConfigs(pc));
+
+            s.Update(pc, configs);
+        }
+
         public async Task<Pc?> GetPc()
         {
             var networkInterface = NetworkInterface.GetAllNetworkInterfaces()
@@ -27,7 +37,7 @@ namespace Daemon
             ipv4Address = ipProperties.UnicastAddresses
                 .FirstOrDefault(a => a.Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)?.Address;
 
-            if (!Directory.Exists(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "FooBakCup")))
+            if (!File.Exists(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "FooBakCup", "pc.json")))
                 try
                 {
                     HttpResponseMessage response = await client.PostAsJsonAsync(client.BaseAddress + "api/Computer", new Computer(physicalAddress.ToString(), ipv4Address!.ToString(), Environment.MachineName));
@@ -42,7 +52,8 @@ namespace Daemon
                     return pc;
                 }
                 catch { return null; }
-            else return null;
+
+            return null;
         }
 
         public async Task<List<Config>?> GetConfigs(Pc? pc)
@@ -59,7 +70,9 @@ namespace Daemon
             {
                 HttpResponseMessage response = await client.GetAsync(client.BaseAddress + "api/Config/" + id);
 
-                string content = response.Content.ReadAsStringAsync().Result;
+                string content = await response.Content.ReadAsStringAsync();
+
+                await Console.Out.WriteLineAsync(content);
 
                 Config? config = JsonConvert.DeserializeObject<Config>(content);
 

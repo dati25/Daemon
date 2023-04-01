@@ -48,7 +48,7 @@ namespace Daemon.Backup.Services
             sw.Close();
         }
 
-        public void CopyWithSnapshotCheck(string source, string dest, List<SnappedFile> snapshot)
+        public void CopyWithSnapshotCheck(string source, string dest, List<Snapshot> snapshot)
         {
             if (!Directory.Exists(source)) return;
 
@@ -60,7 +60,7 @@ namespace Daemon.Backup.Services
             {
                 DirectoryInfo d = new DirectoryInfo(dirPath);
 
-                if (snapshot.Any(item => item.FullPath == dirPath/* && item.LastDateModified == d.LastWriteTime*/))
+                if (snapshot.Any(item => item.Path == dirPath/* && item.LastDateModified == d.LastWriteTime*/))
                     continue;
 
                 Directory.CreateDirectory(dirPath.Replace(dirPath, Path.Combine(dest, dirPath.Substring(dirPath.LastIndexOf('\\') + 1))));
@@ -70,7 +70,7 @@ namespace Daemon.Backup.Services
             {
                 FileInfo f = new FileInfo(newPath);
 
-                if (snapshot.Any(item => item.FullPath == newPath/* && item.LastDateModified == f.LastWriteTime*/))
+                if (snapshot.Any(item => item.Path == newPath/* && item.LastDateModified == f.LastWriteTime*/))
                     continue;
 
                 File.Copy(newPath, newPath.Replace(source, dest), true);

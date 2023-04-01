@@ -2,9 +2,9 @@
 
 public class SnapshotService
 {
-    public List<SnappedFile> ReadSnappedFiles(string snapshotPath)
+    public List<Snapshot> ReadSnapshot(string snapshotPath)
     {
-        List<SnappedFile> snaps = new List<SnappedFile>();
+        List<Snapshot> snaps = new List<Snapshot>();
 
         using (StreamReader sr = new StreamReader(snapshotPath))
         {
@@ -12,13 +12,8 @@ public class SnapshotService
             while ((line = sr.ReadLine()) != null)
             {
                 string[] strings = line.Split('|');
-                snaps.Add(new SnappedFile(strings[0], DateTime.Parse(strings[1]))); 
+                snaps.Add(new Snapshot(strings[0], DateTime.Parse(strings[1])));
             }
-            // while (sr.EndOfStream)
-            // {
-            //     string[] strings = sr.ReadLine()!.Split('|');
-            //     snaps.Add(new SnappedFile(strings[0], DateTime.Parse(strings[1])));
-            // }
         }
 
         return snaps;

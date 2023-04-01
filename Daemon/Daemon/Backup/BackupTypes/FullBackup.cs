@@ -5,39 +5,31 @@ namespace Daemon.Backup.BackupTypes;
 
 public class FullBackup : BackupService
 {
-    private string defaultDirPath;
-    private Config config { get; set; }
+    public Config Config { get; set; }
+    public List<string> destPaths { get; set; }
 
     public FullBackup(Config config)
     {
-        this.config = config;
-        this.defaultDirPath = @$"{config.Destinations!.First().Path}\FooBakCup\config_{config.Id}";
+        Config = config;
+        destPaths = config.Destinations!.Select(x => Path.Combine(x.Path, "FooBakCup", $"config_{config.Id}")).ToList();
     }
 
     public void Execute()
     {
-        string dirPath = Path.Combine(defaultDirPath, "backup_" + GetBackupNumber(defaultDirPath, config));
-        Directory.CreateDirectory(dirPath);
-
-        config.Sources!.ForEach(source => files.Copy(source.Path, dirPath));
-
-        if (config.Compress == true)
+        foreach (string dest in destPaths)
         {
-            ZipFile.CreateFromDirectory(dirPath, dirPath + ".zip");
-            Directory.Delete(dirPath, true);
-        }
+            string destPath = Path.Combine(dest, "backup_" + GetBackupNumber(dest, Config));
+            Directory.CreateDirectory(destPath);
 
-        for (int i = 1; i < config.Destinations!.Count; i++)
-        {
-            string dest = $@"{config.Destinations[i].Path}\FooBakCup";
+            DeleteBackup(Path.Combine(dest, "backup_" + (GetBackupNumber(dest, Config) - Config.Retention - 1)));
 
-            DirectoryInfo d = new DirectoryInfo(dest);
-            d.Create();
+            Config.Sources!.ForEach(source => fs.Copy(source.Path, destPath));
 
-            d.GetDirectories().ToList().ForEach(item => item.Delete(true));
-            d.GetFiles().ToList().ForEach(item => item.Delete());
-
-            files.Copy(defaultDirPath, dest);
+            if (Config.Compress == true)
+            {
+                ZipFile.CreateFromDirectory(destPath, destPath + ".zip");
+                Directory.Delete(destPath, true);
+            }
         }
     }
 }

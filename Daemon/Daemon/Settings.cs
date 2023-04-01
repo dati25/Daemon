@@ -5,25 +5,19 @@ namespace Daemon
 {
     public class Settings
     {
+        SettingsConfig sc = new SettingsConfig();
+
         public Pc? SavePc(Pc? pc)
         {
             if (pc == null) return ReadPc();
 
-            string dataDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "FooBakCup");
-            string settingsPath = Path.Combine(dataDir, "settings.json");
+            if (!Directory.Exists(sc.SETTINGSDIR))
+                Directory.CreateDirectory(sc.SETTINGSDIR);
 
-            if (!Directory.Exists(dataDir))
-                Directory.CreateDirectory(dataDir);
+            if (File.Exists(sc.PCPATH))
+                File.Delete(sc.PCPATH);
 
-            if (File.Exists(settingsPath))
-                File.Delete(settingsPath);
-
-            using (StreamWriter sw = new StreamWriter(settingsPath, true))
-            {
-                sw.WriteLine("[");
-                sw.WriteLine(JsonConvert.SerializeObject(pc));
-                sw.WriteLine(",");
-            }
+            File.WriteAllText(sc.PCPATH, JsonConvert.SerializeObject(pc, Formatting.Indented));
 
             return pc;
         }
@@ -32,76 +26,53 @@ namespace Daemon
         {
             if (configs == null) return ReadConfigs();
 
-            string dataDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "FooBakCup");
-            string settingsPath = Path.Combine(dataDir, "settings.json");
+            if (!Directory.Exists(sc.SETTINGSDIR))
+                Directory.CreateDirectory(sc.SETTINGSDIR);
 
-            if (!Directory.Exists(dataDir))
-                Directory.CreateDirectory(dataDir);
+            if (File.Exists(sc.CONFIGSPATH))
+                File.Delete(sc.CONFIGSPATH);
 
             List<string> jsons = new List<string>();
 
             configs.ForEach(c => jsons.Add(JsonConvert.SerializeObject(c, Formatting.Indented)));
 
             string json = string.Join(",\n", jsons);
-            using (StreamWriter sw = new StreamWriter(settingsPath, true))
-            {
-                sw.WriteLine("[");
+            using (StreamWriter sw = new StreamWriter(sc.CONFIGSPATH, true))
                 sw.WriteLine(json);
-                sw.WriteLine("]");
-                sw.WriteLine("]");
-            }
 
             return configs;
         }
 
         public Pc? ReadPc()
         {
-            string dataDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "FooBakCup");
-            string settingsPath = Path.Combine(dataDir, "settings.json");
-
-            if (!File.Exists(settingsPath))
+            if (!File.Exists(sc.PCPATH))
                 return null;
 
-            using (StreamReader sr = new StreamReader(settingsPath))
-            {
-                string? line;
+            string json;
+            using (StreamReader sr = new StreamReader(sc.PCPATH))
+                json = sr.ReadToEnd();
 
-                if ((line = sr.ReadLine()) != null)
-                    line = sr.ReadLine();
-                else return null;
-
-                return JsonConvert.DeserializeObject<Pc>(line!);
-            }
+            return JsonConvert.DeserializeObject<Pc>(json);
         }
 
         public List<Config>? ReadConfigs()
         {
-            string dataDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "FooBakCup");
-            string settingsPath = Path.Combine(dataDir, "settings.json");
-
-            if (!File.Exists(settingsPath))
+            if (!File.Exists(sc.CONFIGSPATH))
                 return null;
 
-            using (StreamReader sr = new StreamReader(settingsPath))
-            {
-                string? line;
+            string json;
+            using (StreamReader sr = new StreamReader(sc.CONFIGSPATH))
+                json = sr.ReadToEnd();
 
-                for (int i = 0; i < 3; i++)
-                    if ((line = sr.ReadLine()) != null) continue;
-                    else return null;
-
-                string json = sr.ReadToEnd();
-                json = json.Remove(json.LastIndexOf(']'));
-                return JsonConvert.DeserializeObject<List<Config>>(json);
-            }
+            return JsonConvert.DeserializeObject<List<Config>>(json);
         }
 
         public void Update(Pc? pc, List<Config>? configs)
         {
             if (pc == null || configs == null) return;
 
-            File.Delete(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "FooBakCup", "settings.json"));
-            File.Create(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "FooBakCup", "settings.json")).Close();
+            File.WriteAllText(sc.PCPATH, string.Empty);
+            File.WriteAllText(sc.CONFIGSPATH, string.Empty);
 
             SavePc(pc);
             SaveConfigs(configs);
