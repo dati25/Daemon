@@ -1,4 +1,4 @@
-﻿namespace Daemon.Backup.Services.SnapshotServices;
+﻿namespace Daemon.Models;
 public class Snapshot
 {
     public string Path { get; set; }

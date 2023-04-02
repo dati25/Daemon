@@ -3,7 +3,7 @@ using System.Net.NetworkInformation;
 using Newtonsoft.Json;
 using Daemon.Models;
 
-namespace Daemon
+namespace Daemon.Client
 {
     public class Client
     {

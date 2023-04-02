@@ -1,5 +1,4 @@
-﻿using Daemon.Backup.BackupTypes;
-using Daemon.Models;
+﻿using Daemon.Models;
 
 namespace Daemon;
 
@@ -13,21 +12,25 @@ internal class Program
 
         await Task.Delay(1);
 
-        List<Source> sources = new List<Source>();
-        sources.Add(new Source(157, @"C:\Users\shart\Desktop\Source1"));
-        sources.Add(new Source(157, @"C:\Users\shart\Desktop\Source2"));
-        sources.Add(new Source(157, @"C:\Users\shart\Desktop\Source3"));
+        List<Source> sources = new()
+        {
+            new Source(157, @"C:\Users\shart\Desktop\Source1"),
+            // new Source(157, @"C:\Users\shart\Desktop\Source2"),
+            // new Source(157, @"C:\Users\shart\Desktop\Source3")
+        };
 
-        List<Destination> destinations = new List<Destination>();
-        destinations.Add(new Destination(157, @"C:\Users\shart\Downloads\Dest1", "lcl"));
-        destinations.Add(new Destination(157, @"C:\Users\shart\Downloads\Dest2", "lcl"));
+        List<Destination> destinations = new()
+        {
+            new Destination(157, @"C:\Users\shart\Downloads\Dest1", "lcl"),
+            new Destination(157, @"C:\Users\shart\Downloads\Dest2", "lcl")
+        };
 
-        List<Tasks> tasks = new List<Tasks>();
+        List<Tasks> tasks = new();
 
 
-        Config? config = new Config("full", "* * * * *", DateTime.Now.ToString(), true, 5, 3, 1, true, sources, destinations, tasks) { Id = 157 };
+        Config? config = new("full", "* * * * *", DateTime.Now.ToString(), false, 5, 3, 1, true, sources, destinations, tasks) { Id = 157 };
 
-        FullBackup backup = new FullBackup(config);
-        backup.Execute();
+        Backup b = new(config);
+        b.Execute(true, false);
     }
 }

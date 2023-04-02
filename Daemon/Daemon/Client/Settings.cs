@@ -1,7 +1,7 @@
 ﻿using Daemon.Models;
 using Newtonsoft.Json;
 
-namespace Daemon
+namespace Daemon.Client
 {
     public class Settings
     {
