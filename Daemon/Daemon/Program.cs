@@ -15,8 +15,8 @@ internal class Program
         List<Source> sources = new()
         {
             new Source(157, @"C:\Users\shart\Desktop\Source1"),
-            // new Source(157, @"C:\Users\shart\Desktop\Source2"),
-            // new Source(157, @"C:\Users\shart\Desktop\Source3")
+            new Source(157, @"C:\Users\shart\Desktop\Source2"),
+            new Source(157, @"C:\Users\shart\Desktop\Source3")
         };
 
         List<Destination> destinations = new()
@@ -31,6 +31,6 @@ internal class Program
         Config? config = new("full", "* * * * *", DateTime.Now.ToString(), false, 5, 3, 1, true, sources, destinations, tasks) { Id = 157 };
 
         Backup b = new(config);
-        b.Execute(true, false);
+        b.Execute(true, true);
     }
 }

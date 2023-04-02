@@ -11,6 +11,8 @@ namespace Daemon
         public List<string> destPaths { get; set; }
 
         private FileService fs = new();
+        private SettingsConfig sc = new();
+        private SnapshotService s = new();
 
         public Backup(Config config)
         {
@@ -18,14 +20,8 @@ namespace Daemon
             destPaths = config.Destinations!.Select(x => Path.Combine(x.Path, "FooBakCup", $"config_{config.Id}")).ToList();
         }
 
-        public void Execute(bool snapshot, bool check)
+        public void Execute(bool create = false, bool update = false)
         {
-            if (snapshot)
-            {
-                SnapshotService s = new();
-                Config.Sources!.ForEach(source => s.AddToSnapshot(Config, source.Path));
-            }
-
             foreach (string dest in destPaths)
             {
                 string destPath = Path.Combine(dest, "backup_" + GetBackupNumber(dest, Config));
@@ -33,13 +29,10 @@ namespace Daemon
 
                 DeleteBackup(Path.Combine(dest, "backup_" + (GetBackupNumber(dest, Config) - Config.Retention - 1)));
 
-                if (check)
+                string snapshotPath = Path.Combine(sc.SNAPSHOTSPATH, $"config_{Config.Id}.txt");
+                if (File.Exists(snapshotPath))
                 {
-                    SnapshotService s = new();
-                    SettingsConfig sc = new();
-
-                    List<Snapshot> snaps = s.ReadSnapshot(Path.Combine(sc.SNAPSHOTSPATH, $"config_{Config.Id}.txt"));
-
+                    List<Snapshot> snaps = s.ReadSnapshot(snapshotPath);
                     Config.Sources!.ForEach(source => fs.Copy(source.Path, destPath, true, snaps));
                 }
                 else
@@ -49,6 +42,26 @@ namespace Daemon
                 {
                     ZipFile.CreateFromDirectory(destPath, destPath + ".zip");
                     Directory.Delete(destPath, true);
+                }
+            }
+
+            if (create)
+            {
+                string snapshotPath = Path.Combine(sc.SNAPSHOTSPATH, $"config_{Config.Id}.txt");
+
+                if (!Directory.Exists(sc.SNAPSHOTSPATH))
+                    Directory.CreateDirectory(sc.SNAPSHOTSPATH);
+
+                if (!File.Exists(snapshotPath))
+                {
+                    File.Create(snapshotPath).Close();
+                    Config.Sources!.ForEach(source => s.AddToSnapshot(Config, source.Path, snapshotPath));
+                }
+
+                if (update)
+                {
+                    File.WriteAllText(snapshotPath, string.Empty);
+                    Config.Sources!.ForEach(source => s.AddToSnapshot(Config, source.Path, snapshotPath));
                 }
             }
         }

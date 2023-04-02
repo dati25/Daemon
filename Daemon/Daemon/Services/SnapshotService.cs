@@ -4,18 +4,10 @@ using Daemon.Models;
 namespace Daemon.Services;
 public class SnapshotService
 {
-    public void AddToSnapshot(Config config, string sourcePath)
+    public void AddToSnapshot(Config config, string sourcePath, string snapshotPath)
     {
         SettingsConfig s = new();
         List<Snapshot> snaps = new();
-
-        string snapshotPath = Path.Combine(s.SNAPSHOTSPATH, $"config_{config.Id}.txt");
-
-        if (!Directory.Exists(s.SNAPSHOTSPATH))
-            Directory.CreateDirectory(s.SNAPSHOTSPATH);
-
-        if (!File.Exists(snapshotPath))
-            File.Create(snapshotPath).Close();
 
         (sourcePath, snaps) = GetAllSnapshots(sourcePath, snaps);
 
