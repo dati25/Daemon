@@ -1,4 +1,4 @@
-﻿namespace Daemon.Client
+﻿namespace Daemon.Services
 {
     public class SettingsConfig
     {

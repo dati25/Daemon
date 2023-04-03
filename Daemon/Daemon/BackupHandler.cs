@@ -21,16 +21,20 @@ public class BackupHandler
 
     public void DistributeConfigs(Config config)
     {
+        Backup b = new Backup(config);
+
         switch (config.Type.ToLower())
         {
             case "full":
-
+                b.Execute();
                 break;
 
             case "diff":
+                b.Execute(true);
                 break;
 
             case "incr":
+                b.Execute(true, true);
                 break;
         }
     }

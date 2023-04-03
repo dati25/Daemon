@@ -6,13 +6,11 @@ namespace Daemon.Models;
 public class Tasks
 {
     public int IdPc { get; set; }
-    public int IdConfig { get; set; }
     public string? Snapshot { get; set; }
 
-    public Tasks(int idPc, int idConfig, string? snapshot)
+    public Tasks(int idPc, string? snapshot)
     {
         IdPc = idPc;
-        IdConfig = idConfig;
         Snapshot = snapshot;
     }
 }

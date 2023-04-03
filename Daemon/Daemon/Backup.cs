@@ -1,5 +1,4 @@
 ﻿using Daemon.Services;
-using Daemon.Client;
 using Daemon.Models;
 using System.IO.Compression;
 
@@ -96,7 +95,6 @@ namespace Daemon
             try
             {
                 DirectoryInfo[] items = d.GetDirectories();
-                int backups = items.Length + 1;
 
                 Array.Sort(items, delegate (DirectoryInfo d1, DirectoryInfo d2)
                 {
