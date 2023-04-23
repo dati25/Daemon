@@ -1,10 +1,9 @@
 ﻿using Daemon.Models;
 
 namespace Daemon;
-
 public class BackupHandler
 {
-    private List<Config>? _configs;
+    private readonly List<Config>? _configs;
 
     public BackupHandler(List<Config>? configs)
     {
@@ -16,14 +15,14 @@ public class BackupHandler
         if (_configs == null) return;
 
         foreach (var config in _configs)
-            DistributeConfigs(config);
+            ExecuteConfigs(config);
     }
 
-    public void DistributeConfigs(Config config)
+    private void ExecuteConfigs(Config config)
     {
-        Backup b = new Backup(config);
+        var b = new Backup(config);
 
-        switch (config.Type.ToLower())
+        switch (config.Type!.ToLower())
         {
             case "full":
                 b.Execute();

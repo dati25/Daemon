@@ -2,126 +2,140 @@
 using Daemon.Models;
 using System.IO.Compression;
 
-namespace Daemon
+namespace Daemon;
+public class Backup
 {
-    public class Backup
+    private Config Config { get; }
+    private List<string> DestPaths { get; }
+
+    private readonly FileService _fs = new();
+    private readonly SettingsConfig _sc = new();
+    private readonly SnapshotService _s = new();
+
+    public Backup(Config config)
     {
-        public Config Config { get; set; }
-        public List<string> destPaths { get; set; }
+        Config = config;
+        DestPaths = config.Destinations!.Select(x => Path.Combine(x.Path!, "FooBakCup", $"config_{config.Id}")).ToList();
+    }
 
-        private FileService fs = new();
-        private SettingsConfig sc = new();
-        private SnapshotService s = new();
+    public void Execute(bool create = false, bool update = false)
+    {
+        if (Config.ExpirationDate != null && DateTime.Parse(Config.ExpirationDate) < DateTime.Now) return;
+        if (Config.Status != true) return;
+        if (Config.Sources == null || Config.Destinations == null) return;
 
-        public Backup(Config config)
+        foreach (var dest in DestPaths)
         {
-            Config = config;
-            destPaths = config.Destinations!.Select(x => Path.Combine(x.Path, "FooBakCup", $"config_{config.Id}")).ToList();
-        }
+            var backupNumber = GetBackupNumber(dest);
+            var destPath = Path.Combine(dest, "backup_" + backupNumber);
+            Directory.CreateDirectory(destPath);
 
-        public void Execute(bool create = false, bool update = false)
-        {
-            foreach (string dest in destPaths)
+            var retentionBackupNumber = backupNumber - Config.Retention;
+            if (retentionBackupNumber >= 0)
             {
-                string destPath = Path.Combine(dest, "backup_" + GetBackupNumber(dest, Config));
-                Directory.CreateDirectory(destPath);
-
-                DeleteBackup(Path.Combine(dest, "backup_" + (GetBackupNumber(dest, Config) - Config.Retention - 1)));
-
-                string snapshotPath = Path.Combine(sc.SNAPSHOTSPATH, $"config_{Config.Id}.txt");
-                if (File.Exists(snapshotPath))
-                {
-                    List<Snapshot> snaps = s.ReadSnapshot(snapshotPath);
-                    Config.Sources!.ForEach(source => fs.Copy(source.Path, destPath, true, snaps));
-                }
-                else
-                    Config.Sources!.ForEach(source => fs.Copy(source.Path, destPath));
-
-                if (Config.Compress == true)
-                {
-                    ZipFile.CreateFromDirectory(destPath, destPath + ".zip");
-                    Directory.Delete(destPath, true);
-                }
+                var retentionBackupPath = Path.Combine(dest, "backup_" + retentionBackupNumber);
+                DeleteBackup(retentionBackupPath);
             }
 
-            if (create)
+            var snapshotPath = Path.Combine(_sc.SnapshotsPath, $"config_{Config.Id}.txt");
+            if (File.Exists(snapshotPath))
             {
-                string snapshotPath = Path.Combine(sc.SNAPSHOTSPATH, $"config_{Config.Id}.txt");
-
-                if (!Directory.Exists(sc.SNAPSHOTSPATH))
-                    Directory.CreateDirectory(sc.SNAPSHOTSPATH);
-
-                if (!File.Exists(snapshotPath))
+                var snaps = _s.ReadSnapshot(snapshotPath);
+                Parallel.ForEach(Config.Sources, source =>
                 {
-                    File.Create(snapshotPath).Close();
-                    Config.Sources!.ForEach(source => s.AddToSnapshot(Config, source.Path, snapshotPath));
-                }
-
-                if (update)
-                {
-                    File.WriteAllText(snapshotPath, string.Empty);
-                    Config.Sources!.ForEach(source => s.AddToSnapshot(Config, source.Path, snapshotPath));
-                }
-            }
-        }
-
-
-        public int GetBackupNumber(string path, Config config)
-        {
-            DirectoryInfo d = new DirectoryInfo(path);
-
-            int fileCount = 1;
-            int dirCount = 1;
-
-            try
-            {
-                FileInfo[] items = d.GetFiles();
-                int backups = items.Length + 1;
-
-                Array.Sort(items, delegate (FileInfo f1, FileInfo f2)
-                {
-                    return f1.LastWriteTime.CompareTo(f2.LastWriteTime);
+                    var sourcePath = source.Path!;
+                    _fs.Copy(sourcePath, destPath, true, snaps);
                 });
-
-                string name = items[items.Length - 1].Name;
-                string[] split = name.Split('_');
-                string[] split2 = split[1].Split('.');
-                int num = int.Parse(split2[0]);
-
-                fileCount += num;
             }
-            catch { }
-
-            try
-            {
-                DirectoryInfo[] items = d.GetDirectories();
-
-                Array.Sort(items, delegate (DirectoryInfo d1, DirectoryInfo d2)
-                {
-                    return d1.LastWriteTime.CompareTo(d2.LastWriteTime);
-                });
-
-                string name = items[items.Length - 1].Name;
-                string[] split = name.Split('_');
-                int num = int.Parse(split[1]);
-
-                dirCount += num;
-            }
-            catch { }
-
-            if (fileCount > dirCount)
-                return fileCount;
             else
-                return dirCount;
+            {
+                Parallel.ForEach(Config.Sources, source =>
+                {
+                    var sourcePath = source.Path!;
+                    _fs.Copy(sourcePath, destPath);
+                });
+            }
+
+            if (Config.Compress == true)
+            {
+                ZipFile.CreateFromDirectory(destPath, destPath + ".zip");
+                Directory.Delete(destPath, true);
+            }
         }
 
-        public void DeleteBackup(string path)
+        if (!create) return;
         {
-            if (File.Exists(path + ".zip"))
-                File.Delete(path + ".zip");
+            var snapshotPath = Path.Combine(_sc.SnapshotsPath, $"config_{Config.Id}.txt");
 
-            if (Directory.Exists(path))
-                Directory.Delete(path, true);
+            if (!Directory.Exists(_sc.SnapshotsPath))
+                Directory.CreateDirectory(_sc.SnapshotsPath);
+
+            if (!File.Exists(snapshotPath))
+            {
+                File.Create(snapshotPath).Close();
+                Config.Sources!.ForEach(source => _s.AddToSnapshot(source.Path!, snapshotPath));
+            }
+
+            if (!update) return;
+            {
+                File.WriteAllText(snapshotPath, string.Empty);
+                Config.Sources!.ForEach(source => _s.AddToSnapshot(source.Path!, snapshotPath));
+            }
         }
+
+    }
+
+
+    private int GetBackupNumber(string path)
+    {
+        var d = new DirectoryInfo(path);
+
+        var fileCount = 1;
+        var dirCount = 1;
+
+        try
+        {
+            var items = d.GetFiles();
+
+            Array.Sort(items, (f1, f2) => f1.LastWriteTime.CompareTo(f2.LastWriteTime));
+
+            var name = items[^1].Name;
+            var split = name.Split('_');
+            var split2 = split[1].Split('.');
+            var num = int.Parse(split2[0]);
+
+            fileCount += num;
+        }
+        catch
+        {
+            // ignored
+        }
+
+        try
+        {
+            var items = d.GetDirectories();
+
+            Array.Sort(items, (d1, d2) => d1.LastWriteTime.CompareTo(d2.LastWriteTime));
+
+            var name = items[^1].Name;
+            var split = name.Split('_');
+            var num = int.Parse(split[1]);
+
+            dirCount += num;
+        }
+        catch
+        {
+            // ignored
+        }
+
+        return fileCount > dirCount ? fileCount : dirCount;
+    }
+
+    private void DeleteBackup(string path)
+    {
+        if (File.Exists(path + ".zip"))
+            File.Delete(path + ".zip");
+        else if (Directory.Exists(path))
+            Directory.Delete(path, true);
     }
 }

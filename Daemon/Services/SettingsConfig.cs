@@ -1,10 +1,8 @@
-﻿namespace Daemon.Services
+﻿namespace Daemon.Services;
+public class SettingsConfig
 {
-    public class SettingsConfig
-    {
-        public string SETTINGSDIR = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "FooBakCup");
-        public string PCPATH = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "FooBakCup", "pc.json");
-        public string CONFIGSPATH = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "FooBakCup", "configs.json");
-        public string SNAPSHOTSPATH = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "FooBakCup", "Snapshots");
-    }
+    public readonly string SettingsDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "FooBakCup");
+    public readonly string PcPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "FooBakCup", "pc.json");
+    public readonly string ConfigsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "FooBakCup", "configs.json");
+    public readonly string SnapshotsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "FooBakCup", "Snapshots");
 }

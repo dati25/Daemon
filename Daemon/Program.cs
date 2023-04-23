@@ -1,12 +1,23 @@
-﻿namespace Daemon;
-internal class Program
+﻿using Daemon.Services;
+
+namespace Daemon;
+internal abstract class Program
 {
     public static async Task Main()
     {
-        Client c = new Client();
-        await c.Register();
+        // var c = new Client();
+        var s = new Settings();
 
-        BackupHandler bh = new BackupHandler(c.GetConfigs(c.GetPc().Result).Result);
+        // await c.Register();
+
+        // BackupHandler bh = new(s.ReadConfigs());
+        // bh.Begin();
+
+        await Task.Delay(1);
+
+        var configs = s.ReadConfigs();
+
+        BackupHandler bh = new(configs);
         bh.Begin();
     }
 }

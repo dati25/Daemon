@@ -7,19 +7,20 @@ using Daemon.Services;
 namespace Daemon;
 public class Client
 {
-    HttpClient client = new HttpClient { BaseAddress = new Uri("http://localhost:5105/") };
+    private readonly HttpClient _client = new() { BaseAddress = new Uri("http://localhost:5105/") };
+    private readonly SettingsConfig _sc = new();
 
     public async Task Register()
     {
-        Settings s = new Settings();
+        var s = new Settings();
 
-        Pc? pc = s.SavePc(await GetPc());
-        List<Config>? configs = s.SaveConfigs(await GetConfigs(pc));
+        var pc = s.SavePc(await GetPc());
+        var configs = s.SaveConfigs(await GetConfigs(pc));
 
         s.Update(pc, configs);
     }
 
-    public async Task<Pc?> GetPc()
+    private async Task<Pc?> GetPc()
     {
         var networkInterface = NetworkInterface.GetAllNetworkInterfaces()
         .FirstOrDefault(ni => ni.OperationalStatus == OperationalStatus.Up &&
@@ -29,50 +30,39 @@ public class Client
         if (networkInterface == null)
             return null;
 
-        PhysicalAddress? physicalAddress;
-        System.Net.IPAddress? ipv4Address;
-
-        physicalAddress = networkInterface.GetPhysicalAddress();
+        var physicalAddress = networkInterface.GetPhysicalAddress();
         var ipProperties = networkInterface.GetIPProperties();
-        ipv4Address = ipProperties.UnicastAddresses
+        var ipv4Address = ipProperties.UnicastAddresses
             .FirstOrDefault(a => a.Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)?.Address;
 
-        if (!File.Exists(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "FooBakCup", "pc.json")))
-            try
-            {
-                HttpResponseMessage response = await client.PostAsJsonAsync(client.BaseAddress + "api/Computer", new Computer(physicalAddress.ToString(), ipv4Address!.ToString(), Environment.MachineName));
+        if (File.Exists(Path.Combine(_sc.SettingsDir, "pc.json"))) return null;
+        if (!Directory.Exists(_sc.SettingsDir)) Directory.CreateDirectory(_sc.SettingsDir);
 
-                string content = response.Content.ReadAsStringAsync().Result;
+        try
+        {
+            var response = await _client.PostAsJsonAsync(_client.BaseAddress + "api/Computer", new Computer(physicalAddress.ToString(), ipv4Address!.ToString(), Environment.MachineName));
+            var content = response.Content.ReadAsStringAsync().Result;
+            var pc = new Pc { idPc = int.Parse(content) };
 
-                Pc? pc = JsonConvert.DeserializeObject<Pc>(content);
-
-                if (pc == null)
-                    return null;
-
-                return pc;
-            }
-            catch { return null; }
-
-        return null;
+            return pc;
+        }
+        catch { return null; }
     }
 
-    public async Task<List<Config>?> GetConfigs(Pc? pc)
+    private async Task<List<Config>?> GetConfigs(Pc? pc)
     {
         if (pc == null) return null;
 
-        List<int>? configIds = await GetConfigIds(pc);
-        List<Config>? configs = new List<Config>();
+        var configIds = await GetConfigIds(pc);
+        var configs = new List<Config>();
 
-        if (configIds == null)
-            return null;
+        if (configIds == null) return null;
 
-        foreach (int id in configIds)
+        foreach (var id in configIds)
         {
-            HttpResponseMessage response = await client.GetAsync(client.BaseAddress + "api/Config/" + id);
-
-            string content = await response.Content.ReadAsStringAsync();
-
-            Config? config = JsonConvert.DeserializeObject<Config>(content);
+            var response = await _client.GetAsync(_client.BaseAddress + "api/Config/" + id);
+            var content = await response.Content.ReadAsStringAsync();
+            var config = JsonConvert.DeserializeObject<Config>(content);
 
             if (config == null)
                 return null;
@@ -83,55 +73,48 @@ public class Client
         return configs;
     }
 
-    public async Task<List<int>?> GetConfigIds(Pc? pc)
+    private async Task<List<int>?> GetConfigIds(Pc? pc)
     {
         if (pc == null) return null;
 
         try
         {
-            HttpResponseMessage response = await client.GetAsync(client.BaseAddress + "api/tasks/" + pc.idPc);
+            var response = await _client.GetAsync(_client.BaseAddress + "api/tasks/" + pc.idPc);
+            var content = response.Content.ReadAsStringAsync().Result;
+            var configs = JsonConvert.DeserializeObject<List<int>>(content);
 
-            string content = response.Content.ReadAsStringAsync().Result;
-
-            List<int>? configs = JsonConvert.DeserializeObject<List<int>>(content);
-
-            if (configs == null)
-                return null;
-
-            return configs;
+            return configs ?? null;
         }
         catch { return null; }
     }
 
     public async Task AddSnapshots()
     {
-        SettingsConfig sc = new SettingsConfig();
-        FileInfo[] files = new DirectoryInfo(sc.SNAPSHOTSPATH).GetFiles();
+        var sc = new SettingsConfig();
+        var files = new DirectoryInfo(sc.SnapshotsPath).GetFiles();
 
-        foreach (FileInfo file in files)
+        foreach (var file in files)
         {
-            string temp = file.Name.Split('_')[1];
-            int configId = int.Parse(temp.Split('.')[0]);
+            var temp = file.Name.Split('_')[1];
+            var configId = int.Parse(temp.Split('.')[0]);
 
-            Config? c = GetConfigs(GetPc().Result).Result!.Where(c => c.Id == configId).FirstOrDefault();
-            Tasks? t = null;
+            var c = GetConfigs(GetPc().Result).Result!.FirstOrDefault(c => c.Id == configId);
+            Tasks? task = null;
 
             if (c != null)
-                t = c.Tasks!.Where(t => t.IdPc == GetPc().Result!.idPc).FirstOrDefault();
+                task = c.Tasks!.FirstOrDefault(t => t.IdPc == GetPc().Result!.idPc);
 
-            if (c != null && t!.Snapshot == null)
+            if (c == null || task!.Snapshot != null) continue;
+            var content = await File.ReadAllTextAsync(file.FullName);
+
+            var idPc = GetPc().Result!.idPc;
+            var ts = new Tasks() { IdPc = idPc, Snapshot = content };
+
+            try
             {
-                string content = File.ReadAllText(file.FullName);
-
-                int idPc = GetPc().Result!.idPc;
-                Tasks ts = new Tasks(idPc, content);
-
-                try
-                {
-                    HttpResponseMessage response = await client.PutAsJsonAsync(client.BaseAddress + $"api/Config/{configId}", ts);
-                }
-                catch { }
+                var response = await _client.PutAsJsonAsync(_client.BaseAddress + $"api/Config/{configId}", ts);
             }
+            catch { }
         }
     }
 }

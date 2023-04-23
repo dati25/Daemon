@@ -3,51 +3,42 @@
 namespace Daemon.Services;
 public class SnapshotService
 {
-    public void AddToSnapshot(Config config, string sourcePath, string snapshotPath)
+    public void AddToSnapshot(string sourcePath, string snapshotPath)
     {
-        SettingsConfig s = new();
         List<Snapshot> snaps = new();
 
-        (sourcePath, snaps) = GetAllSnapshots(sourcePath, snaps);
+        snaps = GetAllSnapshots(sourcePath, snaps);
 
         List<string> snapsText = new();
-        snaps.ForEach(x => snapsText.Add(x.Path + "|" + x.LastModified.ToString()));
+        snaps.ForEach(x => snapsText.Add(x.Path + "|" + x.LastModified));
 
-        using (StreamWriter sw = new StreamWriter(snapshotPath, true))
-            snapsText.ForEach(x => sw.WriteLine(x));
+        using var sw = new StreamWriter(snapshotPath, true);
+        snapsText.ForEach(x => sw.WriteLine(x));
     }
 
     public List<Snapshot> ReadSnapshot(string snapshotPath)
     {
-        List<Snapshot> snaps = new List<Snapshot>();
+        var snaps = new List<Snapshot>();
 
-        using (StreamReader sr = new StreamReader(snapshotPath))
+        using var sr = new StreamReader(snapshotPath);
+        while (sr.ReadLine() is { } line)
         {
-            string? line;
-            while ((line = sr.ReadLine()) != null)
-            {
-                string[] strings = line.Split('|');
-                snaps.Add(new Snapshot(strings[0], DateTime.Parse(strings[1])));
-            }
+            var strings = line.Split('|');
+            snaps.Add(new Snapshot(strings[0], DateTime.Parse(strings[1])));
         }
 
         return snaps;
     }
 
 
-    private (string, List<Snapshot>) GetAllSnapshots(string sourcePath, List<Snapshot> snaps)
+    private List<Snapshot> GetAllSnapshots(string sourcePath, List<Snapshot> snaps)
     {
-        foreach (string filePath in Directory.GetFileSystemEntries(sourcePath))
-        {
-            FileSystemInfo fileSystemInfo = new FileInfo(filePath);
-            snaps.Add(new Snapshot(fileSystemInfo.FullName, fileSystemInfo.LastWriteTime));
-        }
+        var paths = Directory.GetFileSystemEntries(sourcePath);
+        snaps.AddRange(paths.Select(filePath => new FileInfo(filePath)).Select(fileSystemInfo => new Snapshot(fileSystemInfo.FullName, fileSystemInfo.LastWriteTime)));
 
-        foreach (string subDir in Directory.GetDirectories(sourcePath))
-        {
+        foreach (var subDir in Directory.GetDirectories(sourcePath))
             GetAllSnapshots(subDir, snaps);
-        }
 
-        return (sourcePath, snaps);
+        return snaps;
     }
 }

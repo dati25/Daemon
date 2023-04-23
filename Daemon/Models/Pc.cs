@@ -1,7 +1,5 @@
-﻿namespace Daemon.Models
+﻿namespace Daemon.Models;
+public class Pc
 {
-    public class Pc
-    {
-        public int idPc { get; set; }
-    }
+    public int idPc { get; set; }
 }
