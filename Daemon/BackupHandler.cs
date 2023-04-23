@@ -3,18 +3,18 @@
 namespace Daemon;
 public class BackupHandler
 {
-    private readonly List<Config>? _configs;
+    private readonly List<Config>? configs;
 
     public BackupHandler(List<Config>? configs)
     {
-        _configs = configs;
+        this.configs = configs;
     }
 
     public void Begin()
     {
-        if (_configs == null) return;
+        if (configs == null) return;
 
-        foreach (var config in _configs)
+        foreach (var config in configs)
             ExecuteConfigs(config);
     }
 
