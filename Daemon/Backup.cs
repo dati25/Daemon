@@ -5,7 +5,7 @@ using System.IO.Compression;
 namespace Daemon;
 public class Backup
 {
-    private Config Config { get; }
+    private Config Config { get; set; }
     private List<string> DestPaths { get; }
 
     private readonly FileService _fs = new();
@@ -17,8 +17,24 @@ public class Backup
         Config = config;
         DestPaths = config.Destinations!.Select(x => Path.Combine(x.Path!, "FooBakCup", $"config_{config.Id}")).ToList();
     }
+    public void Execute()
+    {
+        switch (this.Config.Type!.ToLower())
+        {
+            case "full":
+                this.DoBackup();
+                break;
 
-    public void Execute(bool create = false, bool update = false)
+            case "diff":
+                this.DoBackup(true);
+                break;
+
+            case "incr":
+                this.DoBackup(true, true);
+                break;
+        }
+    }
+    private void DoBackup(bool create = false, bool update = false)
     {
         if (Config.ExpirationDate != null && DateTime.Parse(Config.ExpirationDate) < DateTime.Now) return;
         if (Config.Status != true) return;
@@ -84,7 +100,6 @@ public class Backup
         }
 
     }
-
 
     private int GetBackupNumber(string path)
     {

@@ -7,6 +7,8 @@ internal abstract class Program
     public static async Task Main()
     {
         Application app = new Application();
-        await app.Execute();
+        await app.Run();
+
+        await Console.Out.WriteLineAsync("end");
     }
 }

@@ -7,8 +7,8 @@ using Daemon.Services;
 namespace Daemon;
 public class Client
 {
-    private readonly HttpClient _client = new() { BaseAddress = new Uri("http://localhost:5105/") };
-    private readonly SettingsConfig _sc = new();
+    private readonly HttpClient client = new() { BaseAddress = new Uri("http://localhost:5105/") };
+    private readonly SettingsConfig setttingsConfig = new();
 
     public async Task Register()
     {
@@ -35,12 +35,12 @@ public class Client
         var ipv4Address = ipProperties.UnicastAddresses
             .FirstOrDefault(a => a.Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)?.Address;
 
-        if (File.Exists(Path.Combine(_sc.SettingsDir, "pc.json"))) return null;
-        if (!Directory.Exists(_sc.SettingsDir)) Directory.CreateDirectory(_sc.SettingsDir);
+        if (File.Exists(Path.Combine(setttingsConfig.SettingsDir, "pc.json"))) return null;
+        if (!Directory.Exists(setttingsConfig.SettingsDir)) Directory.CreateDirectory(setttingsConfig.SettingsDir);
 
         try
         {
-            var response = await _client.PostAsJsonAsync(_client.BaseAddress + "api/Computer", new Computer(physicalAddress.ToString(), ipv4Address!.ToString(), Environment.MachineName));
+            var response = await client.PostAsJsonAsync(client.BaseAddress + "api/Computer", new Computer(physicalAddress.ToString(), ipv4Address!.ToString(), Environment.MachineName));
             var content = response.Content.ReadAsStringAsync().Result;
             var pc = new Pc { idPc = int.Parse(content) };
 
@@ -60,7 +60,7 @@ public class Client
 
         foreach (var id in configIds)
         {
-            var response = await _client.GetAsync(_client.BaseAddress + "api/Config/" + id);
+            var response = await client.GetAsync(client.BaseAddress + "api/Config/" + id);
             var content = await response.Content.ReadAsStringAsync();
             var config = JsonConvert.DeserializeObject<Config>(content);
 
@@ -79,7 +79,7 @@ public class Client
 
         try
         {
-            var response = await _client.GetAsync(_client.BaseAddress + "api/tasks/" + pc.idPc);
+            var response = await client.GetAsync(client.BaseAddress + "api/tasks/" + pc.idPc);
             var content = response.Content.ReadAsStringAsync().Result;
             var configs = JsonConvert.DeserializeObject<List<int>>(content);
 
@@ -112,7 +112,7 @@ public class Client
 
             try
             {
-                var response = await _client.PutAsJsonAsync(_client.BaseAddress + $"api/Config/{configId}", ts);
+                var response = await client.PutAsJsonAsync(client.BaseAddress + $"api/Config/{configId}", ts);
             }
             catch { }
         }
