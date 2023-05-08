@@ -90,31 +90,30 @@ public class Client
 
     public async Task AddSnapshots()
     {
-        var sc = new SettingsConfig();
-        var files = new DirectoryInfo(sc.SnapshotsPath).GetFiles();
+        //var sc = new SettingsConfig();
+        //var files = new DirectoryInfo(sc.SnapshotsPath).GetFiles();
 
-        foreach (var file in files)
-        {
-            var temp = file.Name.Split('_')[1];
-            var configId = int.Parse(temp.Split('.')[0]);
+        //foreach (var file in files)
+        //{
+        //    var temp = file.Name.Split('_')[1];
+        //    var configId = int.Parse(temp.Split('.')[0]);
 
-            var c = GetConfigs(GetPc().Result).Result!.FirstOrDefault(c => c.Id == configId);
-            Tasks? task = null;
+        //    var c = GetConfigs(GetPc().Result).Result!.FirstOrDefault(c => c.Id == configId);
 
-            if (c != null)
-                task = c.Tasks!.FirstOrDefault(t => t.IdPc == GetPc().Result!.idPc);
+        //    if (c != null)
+        //        task = c.Tasks!.FirstOrDefault(t => t.IdPc == GetPc().Result!.idPc);
 
-            if (c == null || task!.Snapshot != null) continue;
-            var content = await File.ReadAllTextAsync(file.FullName);
+        //    if (c == null || task!.Snapshot != null) continue;
+        //    var content = await File.ReadAllTextAsync(file.FullName);
 
-            var idPc = GetPc().Result!.idPc;
-            var ts = new Tasks() { IdPc = idPc, Snapshot = content };
+        //    var idPc = GetPc().Result!.idPc;
+        //    var ts = new Tasks() { IdPc = idPc, Snapshot = content };
 
-            try
-            {
-                var response = await client.PutAsJsonAsync(client.BaseAddress + $"api/Config/{configId}", ts);
-            }
-            catch { }
-        }
+        //    try
+        //    {
+        //        var response = await client.PutAsJsonAsync(client.BaseAddress + $"api/Config/{configId}", ts);
+        //    }
+        //    catch { }
+        //}
     }
 }

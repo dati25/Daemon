@@ -8,7 +8,5 @@ internal abstract class Program
     {
         Application app = new Application();
         await app.Run();
-
-        await Console.Out.WriteLineAsync("end");
     }
 }

@@ -22,13 +22,25 @@ namespace Daemon
             var c = new Client();
             await c.Register();
 
-            var configs = await this.GetSettings();
-            if(configs == null)
-                return;
+            await Task.Delay(1);
+            await Task.Delay(1);
+
+            var configs = s.ReadConfigs();
+            //if (configs == null)
+            //    return;
+            //if(configs.Count !> 0)
+            //    return;
 
             var schService = new ScheduleService();
             var builder = await schService.GenerateTriggers(configs);
             await builder.RunAsync();
+
+            foreach (var config in configs)
+            {
+                await Console.Out.WriteLineAsync("hello");
+                await Console.Out.WriteLineAsync(config.Name);
+            }
+
         }
 
 

@@ -17,9 +17,9 @@ namespace Daemon.Services.Jobs
             var map = context.MergedJobDataMap as IDictionary<string, object>;
             var config = (Config)map["config"];
 
-            Backup backup = new Backup(config);
+            var backup = new Backup(config);
+
             backup.Execute();
-            await Console.Out.WriteLineAsync($"Backup of confing {config.Name} completed.");
         }
     }
 }

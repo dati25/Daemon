@@ -24,16 +24,13 @@ namespace Daemon.Services
         }
         public ITrigger GenerateTrigger(IScheduler sch, Config config)
         {
-            if (config.ExpirationDate == null) //vsechno null, negetuju configy asi vubec
-            {
-                config.ExpirationDate = "* * * * *";
-            }
             var trigger = TriggerBuilder.Create()
                     .WithIdentity($"{config.Name}({config.Id})", "ConfigTriggers")
-                    .WithCronSchedule(config.RepeatPeriod!)
+                    .WithCronSchedule("0 " + config.RepeatPeriod!)
+                    .EndAt(DateTime.Parse(config.ExpirationDate!))
+                    .UsingJobData(new JobDataMap(new Dictionary<string, Config> { { "config", config } }))
                     .Build();
 
-            sch.Context.Put("config", config);
             return trigger;
         }
         private IHost GetBuilder()
