@@ -88,7 +88,7 @@ public class Client
         catch { return null; }
     }
 
-    public async Task AddSnapshots()
+    public async Task AddSnapshots(int idPC)
     {
         //var sc = new SettingsConfig();
         //var files = new DirectoryInfo(sc.SnapshotsPath).GetFiles();
@@ -115,5 +115,7 @@ public class Client
         //    }
         //    catch { }
         //}
+
+        await this.client.PutAsJsonAsync(client.BaseAddress + "api/Snapthots")
     }
 }
