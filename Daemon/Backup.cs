@@ -9,7 +9,6 @@ public class Backup
     private List<string> DestPaths { get; }
 
     private readonly FileService _fs = new();
-    private readonly SettingsConfig _sc = new();
     private readonly SnapshotService _s = new();
 
     public Backup(Config config)
@@ -53,10 +52,10 @@ public class Backup
                 DeleteBackup(retentionBackupPath);
             }
 
-            var snapshotPath = Path.Combine(_sc.SnapshotsPath, $"config_{Config.Id}.txt");
+            var snapshotPath = Path.Combine(SettingsConfig.SnapshotsPath, $"config_{Config.Id}.txt");
             if (File.Exists(snapshotPath))
             {
-                var snaps = _s.ReadSnapshot(snapshotPath);
+                var snaps = _s.ReadSnapshots(snapshotPath);
                 Parallel.ForEach(Config.Sources, source =>
                 {
                     var sourcePath = source.Path!;
@@ -79,12 +78,14 @@ public class Backup
             }
         }
 
-        if (!create) return;
-        {
-            var snapshotPath = Path.Combine(_sc.SnapshotsPath, $"config_{Config.Id}.txt");
+        if (!create)
+            return;
 
-            if (!Directory.Exists(_sc.SnapshotsPath))
-                Directory.CreateDirectory(_sc.SnapshotsPath);
+        {
+            var snapshotPath = Path.Combine(SettingsConfig.SnapshotsPath, $"config_{Config.Id}.txt");
+
+            if (!Directory.Exists(SettingsConfig.SnapshotsPath))
+                Directory.CreateDirectory(SettingsConfig.SnapshotsPath);
 
             if (!File.Exists(snapshotPath))
             {
@@ -92,11 +93,15 @@ public class Backup
                 Config.Sources!.ForEach(source => _s.AddToSnapshot(source.Path!, snapshotPath));
             }
 
-            if (!update) return;
+            if (update)
             {
                 File.WriteAllText(snapshotPath, string.Empty);
                 Config.Sources!.ForEach(source => _s.AddToSnapshot(source.Path!, snapshotPath));
             }
+            //upload snapshot na databazi (asi?)
+            var client = new Client();
+            client.AddSnapshot(Config.Id)!.GetAwaiter().GetResult();
+
         }
 
     }

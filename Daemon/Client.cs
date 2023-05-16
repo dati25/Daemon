@@ -8,7 +8,6 @@ namespace Daemon;
 public class Client
 {
     private readonly HttpClient client = new() { BaseAddress = new Uri("http://localhost:5105/") };
-    private readonly SettingsConfig setttingsConfig = new();
 
     public async Task Register()
     {
@@ -35,8 +34,8 @@ public class Client
         var ipv4Address = ipProperties.UnicastAddresses
             .FirstOrDefault(a => a.Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)?.Address;
 
-        if (File.Exists(Path.Combine(setttingsConfig.SettingsDir, "pc.json"))) return null;
-        if (!Directory.Exists(setttingsConfig.SettingsDir)) Directory.CreateDirectory(setttingsConfig.SettingsDir);
+        if (File.Exists(Path.Combine(SettingsConfig.SettingsDir, "pc.json"))) return null;
+        if (!Directory.Exists(SettingsConfig.SettingsDir)) Directory.CreateDirectory(SettingsConfig.SettingsDir);
 
         try
         {
@@ -88,34 +87,15 @@ public class Client
         catch { return null; }
     }
 
-    public async Task AddSnapshots(int idPC)
+    public async Task AddSnapshot(int configId)
     {
-        //var sc = new SettingsConfig();
-        //var files = new DirectoryInfo(sc.SnapshotsPath).GetFiles();
+        var settings = new Settings();
+        var snapshotService = new SnapshotService();
 
-        //foreach (var file in files)
-        //{
-        //    var temp = file.Name.Split('_')[1];
-        //    var configId = int.Parse(temp.Split('.')[0]);
+        int idPc = settings.ReadPc()!.idPc;
+        string snapshot = snapshotService.ReadSnapshot(Path.Combine(SettingsConfig.SnapshotsPath, $"config_{configId}.txt"));
 
-        //    var c = GetConfigs(GetPc().Result).Result!.FirstOrDefault(c => c.Id == configId);
 
-        //    if (c != null)
-        //        task = c.Tasks!.FirstOrDefault(t => t.IdPc == GetPc().Result!.idPc);
-
-        //    if (c == null || task!.Snapshot != null) continue;
-        //    var content = await File.ReadAllTextAsync(file.FullName);
-
-        //    var idPc = GetPc().Result!.idPc;
-        //    var ts = new Tasks() { IdPc = idPc, Snapshot = content };
-
-        //    try
-        //    {
-        //        var response = await client.PutAsJsonAsync(client.BaseAddress + $"api/Config/{configId}", ts);
-        //    }
-        //    catch { }
-        //}
-
-        await this.client.PutAsJsonAsync(client.BaseAddress + "api/Snapthots")
+        var response = await this.client.PutAsJsonAsync(client.BaseAddress + $"api/Snapshot/{idPc}/{configId}", snapshot);
     }
 }
