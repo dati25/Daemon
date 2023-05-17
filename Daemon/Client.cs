@@ -9,7 +9,7 @@ namespace Daemon;
 public class Client
 {
     private readonly HttpClient client = new() { BaseAddress = new Uri("http://localhost:5105/") };
-    
+    private Settings settings = new();
     public async Task Register()
     {
         var s = new Settings();
@@ -90,10 +90,9 @@ public class Client
 
     public async Task AddSnapshot(int configId)
     {
-        var settings = new Settings();
         var snapshotService = new SnapshotService();
 
-        int idPc = settings.ReadPc()!.idPc;
+        int idPc = this.settings.ReadPc()!.idPc;
         string snapshot = snapshotService.ReadSnapshot(Path.Combine(SettingsConfig.SnapshotsPath, $"config_{configId}.txt"));
 
 
@@ -101,8 +100,7 @@ public class Client
     }
     public async Task<Snapshot?> GetSnapshot(Config config)
     {
-        Settings settings = new();
-        var pc = settings.ReadPc();
+        var pc = this.settings.ReadPc();
 
         if (pc == null)
             return null;
@@ -117,5 +115,12 @@ public class Client
             return null;
 
         return snapshots!.Where(snap => snap.ConfigId == config.Id).FirstOrDefault();
+    }
+    public async void PostReport(Config config, bool status, string? description = null)
+    {
+        var pc = this.settings.ReadPc();
+        await client.PostAsJsonAsync(client.BaseAddress + "api/Report", new Report(pc!.idPc, config.Id, status, DateTime.Now, description));
+
+
     }
 }

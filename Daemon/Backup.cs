@@ -41,7 +41,7 @@ public class Backup
 
         foreach (var dest in DestPaths)
         {
-            var backupNumber = GetBackupNumber(dest);
+            int backupNumber = GetBackupNumber(dest);
             var destPath = Path.Combine(dest, "backup_" + backupNumber);
             Directory.CreateDirectory(destPath);
 
@@ -55,6 +55,8 @@ public class Backup
             var snapshotPath = Path.Combine(SettingsConfig.SnapshotsPath, $"config_{Config.Id}.txt");
 
 
+            //Pokud neexistuje, vlezt na databazi metoda client.GetSnapshot();
+            //Vrati jenom jeden, kdyztak si to predelej, at ti vraci vsechny
             if (File.Exists(snapshotPath))
             {
                 var snaps = _s.ReadSnapshots(snapshotPath);
@@ -66,9 +68,6 @@ public class Backup
             }
             else
             {
-                Client client = new();
-                var snaps = client.GetSnapshot(this.Config);
-                
                 Parallel.ForEach(Config.Sources, source =>
                 {
                     var sourcePath = source.Path!;
@@ -105,12 +104,16 @@ public class Backup
                 File.WriteAllText(snapshotPath, string.Empty);
                 Config.Sources!.ForEach(source => _s.AddToSnapshot(source.Path!, snapshotPath));
             }
-            //upload snapshot na databazi (asi?)
+
             var client = new Client();
             client.AddSnapshot(Config.Id)!.GetAwaiter().GetResult();
-
         }
-
+        this.UploadReport();
+    }
+    private void UploadReport(bool status = true, string? description = null)
+    {
+        Client client = new Client();
+        client.PostReport(this.Config, status, description);
     }
 
     private int GetBackupNumber(string path)
