@@ -5,11 +5,10 @@ using System.IO.Compression;
 namespace Daemon;
 public class Backup
 {
-    private Config Config { get; }
+    private Config Config { get; set; }
     private List<string> DestPaths { get; }
 
     private readonly FileService _fs = new();
-    private readonly SettingsConfig _sc = new();
     private readonly SnapshotService _s = new();
 
     public Backup(Config config)
@@ -17,8 +16,24 @@ public class Backup
         Config = config;
         DestPaths = config.Destinations!.Select(x => Path.Combine(x.Path!, "FooBakCup", $"config_{config.Id}")).ToList();
     }
+    public void Execute()
+    {
+        switch (this.Config.Type!.ToLower())
+        {
+            case "full":
+                this.DoBackup();
+                break;
 
-    public void Execute(bool create = false, bool update = false)
+            case "diff":
+                this.DoBackup(true);
+                break;
+
+            case "incr":
+                this.DoBackup(true, true);
+                break;
+        }
+    }
+    private void DoBackup(bool create = false, bool update = false)
     {
         if (Config.ExpirationDate != null && DateTime.Parse(Config.ExpirationDate) < DateTime.Now) return;
         if (Config.Status != true) return;
@@ -37,10 +52,12 @@ public class Backup
                 DeleteBackup(retentionBackupPath);
             }
 
-            var snapshotPath = Path.Combine(_sc.SnapshotsPath, $"config_{Config.Id}.txt");
+            var snapshotPath = Path.Combine(SettingsConfig.SnapshotsPath, $"config_{Config.Id}.txt");
+
+
             if (File.Exists(snapshotPath))
             {
-                var snaps = _s.ReadSnapshot(snapshotPath);
+                var snaps = _s.ReadSnapshots(snapshotPath);
                 Parallel.ForEach(Config.Sources, source =>
                 {
                     var sourcePath = source.Path!;
@@ -49,12 +66,17 @@ public class Backup
             }
             else
             {
+                Client client = new();
+                var snaps = client.GetSnapshot(this.Config);
+                
                 Parallel.ForEach(Config.Sources, source =>
                 {
                     var sourcePath = source.Path!;
                     _fs.Copy(sourcePath, destPath);
                 });
             }
+
+
 
             if (Config.Compress == true)
             {
@@ -63,12 +85,14 @@ public class Backup
             }
         }
 
-        if (!create) return;
-        {
-            var snapshotPath = Path.Combine(_sc.SnapshotsPath, $"config_{Config.Id}.txt");
+        if (!create)
+            return;
 
-            if (!Directory.Exists(_sc.SnapshotsPath))
-                Directory.CreateDirectory(_sc.SnapshotsPath);
+        {
+            var snapshotPath = Path.Combine(SettingsConfig.SnapshotsPath, $"config_{Config.Id}.txt");
+
+            if (!Directory.Exists(SettingsConfig.SnapshotsPath))
+                Directory.CreateDirectory(SettingsConfig.SnapshotsPath);
 
             if (!File.Exists(snapshotPath))
             {
@@ -76,15 +100,18 @@ public class Backup
                 Config.Sources!.ForEach(source => _s.AddToSnapshot(source.Path!, snapshotPath));
             }
 
-            if (!update) return;
+            if (update)
             {
                 File.WriteAllText(snapshotPath, string.Empty);
                 Config.Sources!.ForEach(source => _s.AddToSnapshot(source.Path!, snapshotPath));
             }
+            //upload snapshot na databazi (asi?)
+            var client = new Client();
+            client.AddSnapshot(Config.Id)!.GetAwaiter().GetResult();
+
         }
 
     }
-
 
     private int GetBackupNumber(string path)
     {

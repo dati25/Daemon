@@ -3,13 +3,13 @@ using Newtonsoft.Json;
 using System.Net.Http.Json;
 using Daemon.Models;
 using Daemon.Services;
+using System.Text.Json;
 
 namespace Daemon;
 public class Client
 {
-    private readonly HttpClient _client = new() { BaseAddress = new Uri("http://localhost:5105/") };
-    private readonly SettingsConfig _sc = new();
-
+    private readonly HttpClient client = new() { BaseAddress = new Uri("http://localhost:5105/") };
+    
     public async Task Register()
     {
         var s = new Settings();
@@ -17,7 +17,7 @@ public class Client
         var pc = s.SavePc(await GetPc());
         var configs = s.SaveConfigs(await GetConfigs(pc));
 
-        s.Update(pc, configs);
+        s.Save(pc, configs);
     }
 
     private async Task<Pc?> GetPc()
@@ -35,12 +35,12 @@ public class Client
         var ipv4Address = ipProperties.UnicastAddresses
             .FirstOrDefault(a => a.Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)?.Address;
 
-        if (File.Exists(Path.Combine(_sc.SettingsDir, "pc.json"))) return null;
-        if (!Directory.Exists(_sc.SettingsDir)) Directory.CreateDirectory(_sc.SettingsDir);
+        if (File.Exists(Path.Combine(SettingsConfig.SettingsDir, "pc.json"))) return null;
+        if (!Directory.Exists(SettingsConfig.SettingsDir)) Directory.CreateDirectory(SettingsConfig.SettingsDir);
 
         try
         {
-            var response = await _client.PostAsJsonAsync(_client.BaseAddress + "api/Computer", new Computer(physicalAddress.ToString(), ipv4Address!.ToString(), Environment.MachineName));
+            var response = await client.PostAsJsonAsync(client.BaseAddress + "api/Computer", new Computer(physicalAddress.ToString(), ipv4Address!.ToString(), Environment.MachineName));
             var content = response.Content.ReadAsStringAsync().Result;
             var pc = new Pc { idPc = int.Parse(content) };
 
@@ -49,7 +49,7 @@ public class Client
         catch { return null; }
     }
 
-    private async Task<List<Config>?> GetConfigs(Pc? pc)
+    public async Task<List<Config>?> GetConfigs(Pc? pc)
     {
         if (pc == null) return null;
 
@@ -60,7 +60,7 @@ public class Client
 
         foreach (var id in configIds)
         {
-            var response = await _client.GetAsync(_client.BaseAddress + "api/Config/" + id);
+            var response = await client.GetAsync(client.BaseAddress + "api/Config/" + id);
             var content = await response.Content.ReadAsStringAsync();
             var config = JsonConvert.DeserializeObject<Config>(content);
 
@@ -79,7 +79,7 @@ public class Client
 
         try
         {
-            var response = await _client.GetAsync(_client.BaseAddress + "api/tasks/" + pc.idPc);
+            var response = await client.GetAsync(client.BaseAddress + "api/tasks/" + pc.idPc);
             var content = response.Content.ReadAsStringAsync().Result;
             var configs = JsonConvert.DeserializeObject<List<int>>(content);
 
@@ -88,33 +88,34 @@ public class Client
         catch { return null; }
     }
 
-    public async Task AddSnapshots()
+    public async Task AddSnapshot(int configId)
     {
-        var sc = new SettingsConfig();
-        var files = new DirectoryInfo(sc.SnapshotsPath).GetFiles();
+        var settings = new Settings();
+        var snapshotService = new SnapshotService();
 
-        foreach (var file in files)
-        {
-            var temp = file.Name.Split('_')[1];
-            var configId = int.Parse(temp.Split('.')[0]);
+        int idPc = settings.ReadPc()!.idPc;
+        string snapshot = snapshotService.ReadSnapshot(Path.Combine(SettingsConfig.SnapshotsPath, $"config_{configId}.txt"));
 
-            var c = GetConfigs(GetPc().Result).Result!.FirstOrDefault(c => c.Id == configId);
-            Tasks? task = null;
 
-            if (c != null)
-                task = c.Tasks!.FirstOrDefault(t => t.IdPc == GetPc().Result!.idPc);
+        var response = await this.client.PutAsJsonAsync(client.BaseAddress + $"api/Snapshot/{idPc}/{configId}", snapshot);
+    }
+    public async Task<Snapshot?> GetSnapshot(Config config)
+    {
+        Settings settings = new();
+        var pc = settings.ReadPc();
 
-            if (c == null || task!.Snapshot != null) continue;
-            var content = await File.ReadAllTextAsync(file.FullName);
+        if (pc == null)
+            return null;
 
-            var idPc = GetPc().Result!.idPc;
-            var ts = new Tasks() { IdPc = idPc, Snapshot = content };
+        var response = await this.client.GetAsync(this.client.BaseAddress + $"api/Snapshot/{pc.idPc}");
+        if (!response.IsSuccessStatusCode)
+            return null;
 
-            try
-            {
-                var response = await _client.PutAsJsonAsync(_client.BaseAddress + $"api/Config/{configId}", ts);
-            }
-            catch { }
-        }
+        var content = response.Content.ReadAsStringAsync().Result;
+        var snapshots = System.Text.Json.JsonSerializer.Deserialize<List<Snapshot>>(content);
+        if (snapshots == null)
+            return null;
+
+        return snapshots!.Where(snap => snap.ConfigId == config.Id).FirstOrDefault();
     }
 }

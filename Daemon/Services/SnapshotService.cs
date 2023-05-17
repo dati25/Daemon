@@ -16,7 +16,7 @@ public class SnapshotService
         snapsText.ForEach(x => sw.WriteLine(x));
     }
 
-    public List<Snapshot> ReadSnapshot(string snapshotPath)
+    public List<Snapshot> ReadSnapshots(string snapshotPath)
     {
         var snaps = new List<Snapshot>();
 
@@ -28,6 +28,13 @@ public class SnapshotService
         }
 
         return snaps;
+    }
+    public string ReadSnapshot(string snapshotPath)
+    {
+        using(var sr = new StreamReader(snapshotPath))
+        {
+            return sr.ReadToEnd();
+        }
     }
 
 
