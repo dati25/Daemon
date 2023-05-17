@@ -15,12 +15,27 @@ namespace Daemon.Services
             var scheduler = await schedulerFactory.GetScheduler();
 
             var job = JobBuilder.Create<BackupJob>()
-                    .WithIdentity("BackupJob", "BackupJobs")
+                    .WithIdentity("BackupJob", "DaemonJobs")
                     .Build();
 
             configs.ForEach(config => scheduler.ScheduleJob(job,this.GenerateTrigger(scheduler,config)));
 
+            var updateJob = JobBuilder.Create<UpdateJob>()
+                .WithIdentity("UpdateJob", "DaemonJobs")
+                .Build();
+
+            await scheduler.ScheduleJob(job, this.GetSimpleTrigger("UpdateTrigger5min", "UpdateTriggers", 300));
             return builder;
+        }
+        public ITrigger GetSimpleTrigger(string triggerName, string groupName, int intervalSec, int repeatCount = -1)
+        {
+            return TriggerBuilder.Create()
+                .WithIdentity(triggerName, groupName)
+                .StartNow()
+                .WithSimpleSchedule(x => x
+                    .WithIntervalInSeconds(intervalSec)
+                    .WithRepeatCount(repeatCount))
+                .Build();
         }
         public ITrigger GenerateTrigger(IScheduler sch, Config config)
         {

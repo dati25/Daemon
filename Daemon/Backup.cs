@@ -53,6 +53,8 @@ public class Backup
             }
 
             var snapshotPath = Path.Combine(SettingsConfig.SnapshotsPath, $"config_{Config.Id}.txt");
+
+
             if (File.Exists(snapshotPath))
             {
                 var snaps = _s.ReadSnapshots(snapshotPath);
@@ -64,12 +66,17 @@ public class Backup
             }
             else
             {
+                Client client = new();
+                var snaps = client.GetSnapshot(this.Config);
+                
                 Parallel.ForEach(Config.Sources, source =>
                 {
                     var sourcePath = source.Path!;
                     _fs.Copy(sourcePath, destPath);
                 });
             }
+
+
 
             if (Config.Compress == true)
             {

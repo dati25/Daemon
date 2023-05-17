@@ -67,7 +67,7 @@ public class Settings
         return JsonConvert.DeserializeObject<List<Config>>(json);
     }
 
-    public void Update(Pc? pc, List<Config>? configs)
+    public void Save(Pc? pc, List<Config>? configs)
     {
         if (pc == null || configs == null) return;
 
@@ -76,5 +76,17 @@ public class Settings
 
         SavePc(pc);
         SaveConfigs(configs);
+    }
+    public void Update()
+    {
+        Client client = new Client();
+
+
+        List<Config>? configs = client.GetConfigs(this.ReadPc()).GetAwaiter().GetResult()!;
+
+        if (configs == null)
+            return;
+
+        this.SaveConfigs(configs!);
     }
 }

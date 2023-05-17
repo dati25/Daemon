@@ -3,12 +3,13 @@ using Newtonsoft.Json;
 using System.Net.Http.Json;
 using Daemon.Models;
 using Daemon.Services;
+using System.Text.Json;
 
 namespace Daemon;
 public class Client
 {
     private readonly HttpClient client = new() { BaseAddress = new Uri("http://localhost:5105/") };
-
+    
     public async Task Register()
     {
         var s = new Settings();
@@ -16,7 +17,7 @@ public class Client
         var pc = s.SavePc(await GetPc());
         var configs = s.SaveConfigs(await GetConfigs(pc));
 
-        s.Update(pc, configs);
+        s.Save(pc, configs);
     }
 
     private async Task<Pc?> GetPc()
@@ -48,7 +49,7 @@ public class Client
         catch { return null; }
     }
 
-    private async Task<List<Config>?> GetConfigs(Pc? pc)
+    public async Task<List<Config>?> GetConfigs(Pc? pc)
     {
         if (pc == null) return null;
 
@@ -97,5 +98,24 @@ public class Client
 
 
         var response = await this.client.PutAsJsonAsync(client.BaseAddress + $"api/Snapshot/{idPc}/{configId}", snapshot);
+    }
+    public async Task<Snapshot?> GetSnapshot(Config config)
+    {
+        Settings settings = new();
+        var pc = settings.ReadPc();
+
+        if (pc == null)
+            return null;
+
+        var response = await this.client.GetAsync(this.client.BaseAddress + $"api/Snapshot/{pc.idPc}");
+        if (!response.IsSuccessStatusCode)
+            return null;
+
+        var content = response.Content.ReadAsStringAsync().Result;
+        var snapshots = System.Text.Json.JsonSerializer.Deserialize<List<Snapshot>>(content);
+        if (snapshots == null)
+            return null;
+
+        return snapshots!.Where(snap => snap.ConfigId == config.Id).FirstOrDefault();
     }
 }
