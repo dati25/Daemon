@@ -22,9 +22,6 @@ namespace Daemon
             var c = new Client();
             await c.Register();
 
-            await Task.Delay(1);
-            await Task.Delay(1);
-
             var configs = s.ReadConfigs();
             //if (configs == null)
             //    return;
@@ -32,7 +29,7 @@ namespace Daemon
             //    return;
 
             var schService = new ScheduleService();
-            var builder = await schService.GenerateTriggers(configs);
+            var builder = await schService.GenerateJobs(configs!);
             await builder.RunAsync();
 
         }
