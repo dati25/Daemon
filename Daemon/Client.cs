@@ -120,7 +120,5 @@ public class Client
     {
         var pc = this.settings.ReadPc();
         await client.PostAsJsonAsync(client.BaseAddress + "api/Report", new Report(pc!.idPc, config.Id, status, DateTime.Now, description));
-
-
     }
 }

@@ -22,7 +22,7 @@ namespace Daemon.Services.Jobs
             var backup = new Backup(config);
 
             backup.Execute();
-
+            Console.WriteLine($"aJeToBackup/{DateTime.Now}");
             
         }
     }

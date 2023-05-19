@@ -32,7 +32,7 @@ namespace Daemon
             //    return;
 
             var schService = new ScheduleService();
-            var builder = await schService.GenerateTriggers(configs);
+            var builder = await schService.GenerateJobs(configs!);
             await builder.RunAsync();
 
         }
