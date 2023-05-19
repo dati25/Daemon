@@ -1,23 +1,33 @@
 ﻿using Daemon.Services;
 using Daemon.Models;
 using System.IO.Compression;
+using System.Dynamic;
+using Newtonsoft.Json;
 
 namespace Daemon;
 public class Backup
 {
     private Config Config { get; set; }
+    private Pc pc { get; set; } 
     private List<string> DestPaths { get; }
+    private Client client = new();
+
+    private List<string> nonFatalErrors = new();
 
     private readonly FileService _fs = new();
     private readonly SnapshotService _s = new();
 
-    public Backup(Config config)
+    public Backup(Config config, Pc pc)
     {
         Config = config;
+        this.pc = pc;
         DestPaths = config.Destinations!.Select(x => Path.Combine(x.Path!, "FooBakCup", $"config_{config.Id}")).ToList();
     }
     public void Execute()
     {
+        if (this.pc.Status == 't')
+            return;
+
         switch (this.Config.Type!.ToLower())
         {
             case "full":
@@ -37,11 +47,21 @@ public class Backup
     {
         if (Config.ExpirationDate != null && DateTime.Parse(Config.ExpirationDate) < DateTime.Now) return;
         if (Config.Status != true) return;
-        if (Config.Sources == null || Config.Destinations == null) return;
+        if (Config.Destinations == null)
+        {
+            this.client.PostReport(this.Config, false, "No assigned destinations.").GetAwaiter();
+            return;
+        }
+        if (Config.Sources == null)
+        {
+            this.client.PostReport(this.Config, false, "No assigned sources.").GetAwaiter();
+            return;
+        }
+
 
         foreach (var dest in DestPaths)
         {
-            var backupNumber = GetBackupNumber(dest);
+            int backupNumber = GetBackupNumber(dest);
             var destPath = Path.Combine(dest, "backup_" + backupNumber);
             Directory.CreateDirectory(destPath);
 
@@ -54,7 +74,17 @@ public class Backup
 
             var snapshotPath = Path.Combine(SettingsConfig.SnapshotsPath, $"config_{Config.Id}.txt");
 
+            //Jestli existuji sources, pokud ne, vyhodi chybovou hlasku a cestu odstrani z Configu(jenom tehle tridy, ne z dat)
+            var wrongSources = this.CheckSourcesExistence(Config.Sources);
+            if (wrongSources.Count > 0)
+                wrongSources.ForEach(source =>
+                {
+                    nonFatalErrors.Add($"Source(Id:{source}) does not exist.");
+                    Config.Sources.Remove(Config.Sources.Where(configSource => configSource.Id == source).First());
+                });
 
+            //Pokud neexistuje, vlezt na databazi metoda client.GetSnapshot();
+            //Vrati jenom jeden, kdyztak si to predelej, at ti vraci vsechny
             if (File.Exists(snapshotPath))
             {
                 var snaps = _s.ReadSnapshots(snapshotPath);
@@ -66,17 +96,12 @@ public class Backup
             }
             else
             {
-                Client client = new();
-                var snaps = client.GetSnapshot(this.Config);
-                
                 Parallel.ForEach(Config.Sources, source =>
                 {
                     var sourcePath = source.Path!;
                     _fs.Copy(sourcePath, destPath);
                 });
             }
-
-
 
             if (Config.Compress == true)
             {
@@ -85,9 +110,7 @@ public class Backup
             }
         }
 
-        if (!create)
-            return;
-
+        if (create)
         {
             var snapshotPath = Path.Combine(SettingsConfig.SnapshotsPath, $"config_{Config.Id}.txt");
 
@@ -105,14 +128,23 @@ public class Backup
                 File.WriteAllText(snapshotPath, string.Empty);
                 Config.Sources!.ForEach(source => _s.AddToSnapshot(source.Path!, snapshotPath));
             }
-            //upload snapshot na databazi (asi?)
+
             var client = new Client();
             client.AddSnapshot(Config.Id)!.GetAwaiter().GetResult();
-
         }
-
+        this.UploadReport(true);
     }
+    public async void UploadReport(bool status = true)
+    {
+        Client client = new Client();
 
+        string? serializedDesciption = nonFatalErrors.Count == 0 ? null : JsonConvert.SerializeObject(nonFatalErrors);
+
+        var uploaded = await client.PostReport(this.Config, status, serializedDesciption);
+
+        if (!uploaded)
+            return;//Zapsat Report do textaku
+    }
     private int GetBackupNumber(string path)
     {
         var d = new DirectoryInfo(path);
@@ -157,12 +189,25 @@ public class Backup
 
         return fileCount > dirCount ? fileCount : dirCount;
     }
-
+    private List<int> CheckSourcesExistence(List<Source> sources)
+    {
+        List<int> results = new();
+        foreach (var source in sources)
+        {
+            if (!Directory.Exists(source.Path) && !File.Exists(source.Path))
+                results.Add(source.Id);
+        }
+        return results;
+    }
     private void DeleteBackup(string path)
     {
         if (File.Exists(path + ".zip"))
             File.Delete(path + ".zip");
         else if (Directory.Exists(path))
             Directory.Delete(path, true);
+    }
+    private void CopySource(Source source)
+    {
+
     }
 }

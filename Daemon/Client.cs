@@ -10,8 +10,7 @@ namespace Daemon;
 public class Client
 {
     private readonly HttpClient client = new() { BaseAddress = new Uri("http://localhost:5105/") };
-    private readonly SettingsConfig setttingsConfig = new();
-    private Pc pc { get; set; }
+    private Settings settings = new();
     public async Task Register()
     {
         var s = new Settings();
@@ -21,7 +20,6 @@ public class Client
 
         s.Save(pc, configs);
     }
-
     private async Task<Pc?> GetPc()
     {
         var networkInterface = NetworkInterface.GetAllNetworkInterfaces()
@@ -45,12 +43,19 @@ public class Client
             var response = await client.PostAsJsonAsync(client.BaseAddress + "api/Computer", new Computer(physicalAddress.ToString(), ipv4Address!.ToString(), Environment.MachineName));
             var content = response.Content.ReadAsStringAsync().Result;
             var pc = new Pc { idPc = int.Parse(content) };
-
+            pc.Status = await this.GetPcStatus(pc);
             return pc;
         }
         catch { return null; }
     }
-
+    public async Task<char?> GetPcStatus(Pc pc)
+    {
+        var response = await this.client.GetAsync(client.BaseAddress + $"api/Sessions/{pc.idPc}");
+        var content = response.Content.ReadAsStringAsync().Result;
+        if (content == null)
+            return null;
+        return Convert.ToChar(content);
+    }
     public async Task<List<Config>?> GetConfigs(Pc? pc)
     {
         if (pc == null) return null;
@@ -74,7 +79,6 @@ public class Client
 
         return configs;
     }
-
     private async Task<List<int>?> GetConfigIds(Pc? pc)
     {
         if (pc == null) return null;
@@ -90,12 +94,11 @@ public class Client
         catch { return null; }
     }
 
-    public async Task AddSnapshots(int idPC)
+    public async Task AddSnapshot(int configId)
     {
-        var settings = new Settings();
         var snapshotService = new SnapshotService();
 
-        int idPc = settings.ReadPc()!.idPc;
+        int idPc = this.settings.ReadPc()!.idPc;
         string snapshot = snapshotService.ReadSnapshot(Path.Combine(SettingsConfig.SnapshotsPath, $"config_{configId}.txt"));
 
         //    var c = GetConfigs(GetPc().Result).Result!.FirstOrDefault(c => c.Id == configId);
@@ -104,8 +107,7 @@ public class Client
     }
     public async Task<Snapshot?> GetSnapshot(Config config)
     {
-        Settings settings = new();
-        var pc = settings.ReadPc();
+        var pc = this.settings.ReadPc();
 
         if (pc == null)
             return null;
@@ -123,4 +125,22 @@ public class Client
 
         await this.client.PutAsJsonAsync(client.BaseAddress + "api/Snapthots")
     }
+    public async Task<bool> PostReport(Config config, bool status, string? description = null)
+    {
+        var pc = this.settings.ReadPc();
+
+        try
+        {
+            var response = await client.PostAsJsonAsync(client.BaseAddress + "api/Report", new Report(pc!.idPc, config.Id, status, DateTime.Now, description));
+            return response.IsSuccessStatusCode;
+        }
+        catch (Exception)
+        {
+            return false;
+        }
+    }
+public void ConnectToFTP(Source source)
+{
+
+}
 }

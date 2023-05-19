@@ -77,16 +77,32 @@ public class Settings
         SavePc(pc);
         SaveConfigs(configs);
     }
-    public void Update()
+    public void Update(ScheduleService schedule)
     {
         Client client = new Client();
-
 
         List<Config>? configs = client.GetConfigs(this.ReadPc()).GetAwaiter().GetResult()!;
 
         if (configs == null)
             return;
 
+        configs.ForEach(config =>
+        {
+            schedule.UpdateConfigTrigger(config);
+        });
+
+        schedule.DeleteUnassignedConfigs(configs);
         this.SaveConfigs(configs!);
+
+        var pc = this.ReadPc();
+        if(pc == null) return;
+        var newStatus = client.GetPcStatus(pc!).GetAwaiter().GetResult();
+        if (pc!.Status != newStatus && pc!.Status != null)
+        {
+            pc.Status = newStatus;
+            this.SavePc(pc);
+        }
+
+
     }
 }

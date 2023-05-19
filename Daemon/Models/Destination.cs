@@ -1,4 +1,8 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
+﻿using Newtonsoft.Json;
+using Quartz.Impl.Triggers;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.Runtime.CompilerServices;
+using System.Security.Cryptography.X509Certificates;
 
 namespace Daemon.Models;
 
@@ -6,7 +10,6 @@ namespace Daemon.Models;
 public class Destination
 {
     public int Id { get; set; }
-    public int? IdConfig { get; set; }
-    public string? Path { get; set; }
-    public string? Type { get; set; }
+    public string Path { get; set; }
+    public bool Type { get; set; }
 }
