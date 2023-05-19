@@ -1,4 +1,4 @@
-﻿using System.Net.NetworkInformation;
+using System.Net.NetworkInformation;
 using Newtonsoft.Json;
 using System.Net.Http.Json;
 using Daemon.Models;
