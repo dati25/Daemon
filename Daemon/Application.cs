@@ -22,9 +22,6 @@ namespace Daemon
             var c = new Client();
             await c.Register();
 
-            await Task.Delay(1);
-            await Task.Delay(1);
-
             var configs = s.ReadConfigs();
             //if (configs == null)
             //    return;

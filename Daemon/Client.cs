@@ -19,7 +19,6 @@ public class Client
 
         s.Save(pc, configs);
     }
-
     private async Task<Pc?> GetPc()
     {
         var networkInterface = NetworkInterface.GetAllNetworkInterfaces()
@@ -43,12 +42,19 @@ public class Client
             var response = await client.PostAsJsonAsync(client.BaseAddress + "api/Computer", new Computer(physicalAddress.ToString(), ipv4Address!.ToString(), Environment.MachineName));
             var content = response.Content.ReadAsStringAsync().Result;
             var pc = new Pc { idPc = int.Parse(content) };
-
+            pc.Status = await this.GetPcStatus(pc);
             return pc;
         }
         catch { return null; }
     }
-
+    public async Task<char?> GetPcStatus(Pc pc)
+    {
+        var response = await this.client.GetAsync(client.BaseAddress + $"api/Sessions/{pc.idPc}");
+        var content = response.Content.ReadAsStringAsync().Result;
+        if (content == null)
+            return null;
+        return Convert.ToChar(content);
+    }
     public async Task<List<Config>?> GetConfigs(Pc? pc)
     {
         if (pc == null) return null;
@@ -72,7 +78,6 @@ public class Client
 
         return configs;
     }
-
     private async Task<List<int>?> GetConfigIds(Pc? pc)
     {
         if (pc == null) return null;
@@ -87,7 +92,6 @@ public class Client
         }
         catch { return null; }
     }
-
     public async Task AddSnapshot(int configId)
     {
         var snapshotService = new SnapshotService();
@@ -116,9 +120,22 @@ public class Client
 
         return snapshots!.Where(snap => snap.ConfigId == config.Id).FirstOrDefault();
     }
-    public async void PostReport(Config config, bool status, string? description = null)
+    public async Task<bool> PostReport(Config config, bool status, string? description = null)
     {
         var pc = this.settings.ReadPc();
-        await client.PostAsJsonAsync(client.BaseAddress + "api/Report", new Report(pc!.idPc, config.Id, status, DateTime.Now, description));
+
+        try
+        {
+            var response = await client.PostAsJsonAsync(client.BaseAddress + "api/Report", new Report(pc!.idPc, config.Id, status, DateTime.Now, description));
+            return response.IsSuccessStatusCode;
+        }
+        catch (Exception)
+        {
+            return false;
+        }
     }
+public void ConnectToFTP(Source source)
+{
+
+}
 }

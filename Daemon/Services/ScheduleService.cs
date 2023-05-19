@@ -19,6 +19,8 @@ namespace Daemon.Services
             var builder = GetBuilder();
             var schedulerFactory = builder.Services.GetRequiredService<ISchedulerFactory>();
             this.scheduler = await schedulerFactory.GetScheduler();
+            
+                
 
             //await scheduler.DeleteJob(new JobKey("BackupJob", "DaemonJobs"));
             //await scheduler.DeleteJob(new JobKey("UdateJob, DaemonJobs"));
