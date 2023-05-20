@@ -25,8 +25,11 @@ public class Backup
     }
     public void Execute()
     {
-        if (this.pc.Status == 't')
+        if (this.pc.Status != 't')
+        {
+            Console.WriteLine("Wrong status");
             return;
+        }
 
         switch (this.Config.Type!.ToLower())
         {
