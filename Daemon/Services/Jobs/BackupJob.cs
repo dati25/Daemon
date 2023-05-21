@@ -27,7 +27,7 @@ namespace Daemon.Services.Jobs
 
             backup.Execute();
 
-            Console.WriteLine($"aJeToBackup/{DateTime.Now}");
+            Console.WriteLine($"Backup-Config({config.Id})/{DateTime.Now}");
             
         }
     }

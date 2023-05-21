@@ -21,7 +21,7 @@ namespace Daemon.Services.Jobs
 
             settings.Update(scheduleService);
 
-            Console.WriteLine($"AjeToUpdate{DateTime.Now}");
+            Console.WriteLine($"Update-{DateTime.Now}");
         }
     }
 }

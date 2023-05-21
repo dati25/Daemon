@@ -22,6 +22,8 @@ public class Client
     }
     private async Task<Pc?> GetPc()
     {
+        if (File.Exists(Path.Combine(SettingsConfig.SettingsDir, "pc.json"))) return null;
+
         var networkInterface = NetworkInterface.GetAllNetworkInterfaces()
         .FirstOrDefault(ni => ni.OperationalStatus == OperationalStatus.Up &&
                         ni.NetworkInterfaceType != NetworkInterfaceType.Loopback &&
@@ -35,7 +37,6 @@ public class Client
         var ipv4Address = ipProperties.UnicastAddresses
             .FirstOrDefault(a => a.Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)?.Address;
 
-        if (File.Exists(Path.Combine(SettingsConfig.SettingsDir, "pc.json"))) return null;
         if (!Directory.Exists(SettingsConfig.SettingsDir)) Directory.CreateDirectory(SettingsConfig.SettingsDir);
 
         try
@@ -50,11 +51,12 @@ public class Client
     }
     public async Task<char?> GetPcStatus(Pc pc)
     {
-        var response = await this.client.GetAsync(client.BaseAddress + $"api/Sessions/{pc.idPc}");
+         var response = await this.client.GetAsync(client.BaseAddress + $"api/Sessions/{pc.idPc}");
         var content = response.Content.ReadAsStringAsync().Result;
-        if (content == null)
+            var stringStatus = JsonConvert.DeserializeObject<string>(content);
+        if (stringStatus == null)
             return null;
-        return Convert.ToChar(content);
+        return Convert.ToChar(stringStatus);
     }
     public async Task<List<Config>?> GetConfigs(Pc? pc)
     {
