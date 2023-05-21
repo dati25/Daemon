@@ -1,9 +1,10 @@
-﻿using System.Net.NetworkInformation;
+using System.Net.NetworkInformation;
 using Newtonsoft.Json;
 using System.Net.Http.Json;
 using Daemon.Models;
 using Daemon.Services;
-using System.Text.Json;
+using System.Threading.Tasks;
+using System.Diagnostics;
 
 namespace Daemon;
 public class Client
@@ -14,7 +15,7 @@ public class Client
     {
         var s = new Settings();
 
-        var pc = s.SavePc(await GetPc());
+        this.pc = s.SavePc(await GetPc());
         var configs = s.SaveConfigs(await GetConfigs(pc));
 
         s.Save(pc, configs);
@@ -94,6 +95,7 @@ public class Client
         }
         catch { return null; }
     }
+
     public async Task AddSnapshot(int configId)
     {
         var snapshotService = new SnapshotService();
@@ -101,6 +103,7 @@ public class Client
         int idPc = this.settings.ReadPc()!.idPc;
         string snapshot = snapshotService.ReadSnapshot(Path.Combine(SettingsConfig.SnapshotsPath, $"config_{configId}.txt"));
 
+        //    var c = GetConfigs(GetPc().Result).Result!.FirstOrDefault(c => c.Id == configId);
 
         var response = await this.client.PutAsJsonAsync(client.BaseAddress + $"api/Snapshot/{idPc}/{configId}", snapshot);
     }
@@ -115,12 +118,14 @@ public class Client
         if (!response.IsSuccessStatusCode)
             return null;
 
-        var content = response.Content.ReadAsStringAsync().Result;
-        var snapshots = System.Text.Json.JsonSerializer.Deserialize<List<Snapshot>>(content);
-        if (snapshots == null)
-            return null;
+        //    try
+        //    {
+        //        var response = await client.PutAsJsonAsync(client.BaseAddress + $"api/Config/{configId}", ts);
+        //    }
+        //    catch { }
+        //}
 
-        return snapshots!.Where(snap => snap.ConfigId == config.Id).FirstOrDefault();
+        await this.client.PutAsJsonAsync(client.BaseAddress + "api/Snapthots")
     }
     public async Task<bool> PostReport(Config config, bool status, string? description = null)
     {
