@@ -30,7 +30,8 @@ namespace Daemon.Services
                     .StoreDurably()
                     .Build();
 
-            configs.ForEach(config => this.scheduler.ScheduleJob(job, this.GenerateTrigger(config)));
+            if (configs != null)
+                configs.ForEach(config => this.scheduler.ScheduleJob(job, this.GenerateTrigger(config)));
 
             var jobs = this.scheduler.GetCurrentlyExecutingJobs();
 
@@ -41,13 +42,22 @@ namespace Daemon.Services
 
 
             await scheduler.ScheduleJob(updateJob, this.GetSimpleTrigger("UpdateTrigger5min", "UpdateTriggers", 60));
+
+            await scheduler.Start();
             return builder;
         }
         public ITrigger GenerateTrigger(Config config)
         {
+            string[] repPer = config.RepeatPeriod!.Split(' ');
+
+            if (repPer[2] == "*")
+                repPer[2] = "?";
+
+            string repeatPeriod = string.Join(" ", repPer);
+
             var trigger = TriggerBuilder.Create()
                     .WithIdentity($"{config.Name}({config.Id})", "ConfigTriggers")
-                    .WithCronSchedule("0 " + config.RepeatPeriod!)
+                    .WithCronSchedule("0 " + repeatPeriod)
                     .EndAt(DateTime.Parse(config.ExpirationDate!))
                     .UsingJobData(new JobDataMap(new Dictionary<string, Config> { { "config", config } }))
                     .Build();
@@ -91,7 +101,7 @@ namespace Daemon.Services
 
             return (Config)map!["config"];
         }
-        public async void UpdateConfigTrigger(Config config)
+        public async Task UpdateConfigTrigger(Config config)
         {
             Config? activeConfig = await this.GetTrigger(config);
             if (activeConfig == null)
@@ -123,7 +133,7 @@ namespace Daemon.Services
 
 
         }
-        private async void RescheduleTrigger(Config activeConfig, Config newConfig)
+        private async Task RescheduleTrigger(Config activeConfig, Config newConfig)
         {
             var triggerKey = new TriggerKey($"{activeConfig.Name}({activeConfig.Id})", "ConfigTriggers");
             await this.scheduler.RescheduleJob(triggerKey, this.GenerateTrigger(newConfig));

@@ -3,23 +3,23 @@ using Newtonsoft.Json;
 using System.Net.Http.Json;
 using Daemon.Models;
 using Daemon.Services;
-using System.Threading.Tasks;
-using System.Diagnostics;
 
 namespace Daemon;
 public class Client
 {
     private readonly HttpClient client = new() { BaseAddress = new Uri("http://localhost:5105/") };
     private Settings settings = new();
+
     public async Task Register()
     {
         var s = new Settings();
 
-        this.pc = s.SavePc(await GetPc());
+        var pc = s.SavePc(await GetPc());
         var configs = s.SaveConfigs(await GetConfigs(pc));
 
         s.Save(pc, configs);
     }
+
     private async Task<Pc?> GetPc()
     {
         if (File.Exists(Path.Combine(SettingsConfig.SettingsDir, "pc.json"))) return null;
@@ -44,20 +44,31 @@ public class Client
             var response = await client.PostAsJsonAsync(client.BaseAddress + "api/Computer", new Computer(physicalAddress.ToString(), ipv4Address!.ToString(), Environment.MachineName));
             var content = response.Content.ReadAsStringAsync().Result;
             var pc = new Pc { idPc = int.Parse(content) };
+
             pc.Status = await this.GetPcStatus(pc);
+
             return pc;
         }
-        catch { return null; }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            Console.ReadKey();
+            return null;
+        }
     }
+
     public async Task<char?> GetPcStatus(Pc pc)
     {
-         var response = await this.client.GetAsync(client.BaseAddress + $"api/Sessions/{pc.idPc}");
+        var response = await this.client.GetAsync(client.BaseAddress + $"api/Sessions/{pc.idPc}");
+
         var content = response.Content.ReadAsStringAsync().Result;
             var stringStatus = JsonConvert.DeserializeObject<string>(content);
         if (stringStatus == null)
             return null;
+
         return Convert.ToChar(stringStatus);
     }
+
     public async Task<List<Config>?> GetConfigs(Pc? pc)
     {
         if (pc == null) return null;
@@ -81,6 +92,7 @@ public class Client
 
         return configs;
     }
+
     private async Task<List<int>?> GetConfigIds(Pc? pc)
     {
         if (pc == null) return null;
@@ -107,6 +119,7 @@ public class Client
 
         var response = await this.client.PutAsJsonAsync(client.BaseAddress + $"api/Snapshot/{idPc}/{configId}", snapshot);
     }
+
     public async Task<Snapshot?> GetSnapshot(Config config)
     {
         var pc = this.settings.ReadPc();
@@ -115,9 +128,11 @@ public class Client
             return null;
 
         var response = await this.client.GetAsync(this.client.BaseAddress + $"api/Snapshot/{pc.idPc}");
+
         if (!response.IsSuccessStatusCode)
             return null;
 
+        return JsonConvert.DeserializeObject<Snapshot>(await response.Content.ReadAsStringAsync());
         //    try
         //    {
         //        var response = await client.PutAsJsonAsync(client.BaseAddress + $"api/Config/{configId}", ts);
@@ -125,8 +140,9 @@ public class Client
         //    catch { }
         //}
 
-        await this.client.PutAsJsonAsync(client.BaseAddress + "api/Snapthots")
+        // await this.client.PutAsJsonAsync(client.BaseAddress + "api/Snapthots");
     }
+
     public async Task<bool> PostReport(Config config, bool status, string? description = null)
     {
         var pc = this.settings.ReadPc();
@@ -136,13 +152,11 @@ public class Client
             var response = await client.PostAsJsonAsync(client.BaseAddress + "api/Report", new Report(pc!.idPc, config.Id, status, DateTime.Now, description));
             return response.IsSuccessStatusCode;
         }
-        catch (Exception)
-        {
-            return false;
-        }
+        catch (Exception) { return false; }
     }
-public void ConnectToFTP(Source source)
-{
 
-}
+    public void ConnectToFTP(Source source)
+    {
+
+    }
 }
