@@ -50,9 +50,6 @@ namespace Daemon.Services
         {
             string[] repPer = config.RepeatPeriod!.Split(' ');
 
-            if (repPer[2] == "*")
-                repPer[2] = "?";
-
             string repeatPeriod = string.Join(" ", repPer);
 
             var trigger = TriggerBuilder.Create()
