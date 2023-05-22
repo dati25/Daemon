@@ -93,6 +93,8 @@ namespace Daemon.Services
             var triggerKey = new TriggerKey($"{config.Name}({config.Id})", "ConfigTriggers");
 
             var trigger = await this.scheduler.GetTrigger(triggerKey);
+            if (trigger == null)
+                return null;
 
             var map = trigger!.JobDataMap as IDictionary<string, object>;
 
@@ -112,7 +114,7 @@ namespace Daemon.Services
 
             if (!config.IsEqualConfig(activeConfig!))
             {
-                this.RescheduleTrigger(activeConfig!, config);
+                await this.RescheduleTrigger(activeConfig!, config);
                 return;
             }
 

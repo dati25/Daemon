@@ -28,7 +28,6 @@ namespace Daemon.Services.Jobs
             backup.Execute();
 
             Console.WriteLine($"Backup-Config({config.Id})/{DateTime.Now}");
-            
         }
     }
 }
