@@ -77,9 +77,18 @@ public class Settings
         SavePc(pc);
         SaveConfigs(configs);
     }
-    public void Update(ScheduleService schedule)
+    public async void Update(ScheduleService schedule)
     {
         Client client = new Client();
+
+        if(this.ReadPc() == null)
+        {
+            if (await client.Register() == null)
+            {
+                Console.WriteLine("Failed to login");
+                return;
+            }
+        }
 
         List<Config>? configs = client.GetConfigs(this.ReadPc()).GetAwaiter().GetResult()!;
 
@@ -102,7 +111,6 @@ public class Settings
             pc.Status = newStatus;
             this.SavePc(pc);
         }
-
 
     }
 }

@@ -65,7 +65,6 @@ namespace Daemon.Services
         {
             return TriggerBuilder.Create()
                 .WithIdentity(triggerName, groupName)
-                .StartNow()
                 .WithSimpleSchedule(x => x
                 .WithIntervalInSeconds(intervalSec)
                 .WithRepeatCount(repeatCount))
@@ -133,6 +132,14 @@ namespace Daemon.Services
         {
             var triggerKey = new TriggerKey($"{activeConfig.Name}({activeConfig.Id})", "ConfigTriggers");
             await this.scheduler.RescheduleJob(triggerKey, this.GenerateTrigger(newConfig));
+        }
+        public List<string> GetAllTriggers()
+        {
+            List<string> list = new();
+            var jobKey = new JobKey("BackupJob", "DaemonJobs");
+            var TriggerList = this.scheduler.GetTriggersOfJob(jobKey).Result;
+            TriggerList.ToList().ForEach(x => list.Add(x.Key.Name));
+            return list;
         }
     }
 }

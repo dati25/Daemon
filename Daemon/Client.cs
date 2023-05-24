@@ -10,7 +10,7 @@ public class Client
     private readonly HttpClient client = new() { BaseAddress = new Uri("http://localhost:5105/") };
     private Settings settings = new();
 
-    public async Task Register()
+    public async Task<Pc?> Register()
     {
         var s = new Settings();
 
@@ -18,6 +18,7 @@ public class Client
         var configs = s.SaveConfigs(await GetConfigs(pc));
 
         s.Save(pc, configs);
+        return pc;
     }
 
     private async Task<Pc?> GetPc()
@@ -49,10 +50,9 @@ public class Client
 
             return pc;
         }
-        catch (Exception e)
+        catch (HttpRequestException e)
         {
-            Console.WriteLine(e);
-            Console.ReadKey();
+            Console.WriteLine("Connection error");
             return null;
         }
     }

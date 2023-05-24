@@ -20,6 +20,10 @@ namespace Daemon.Services.Jobs
             var scheduleService = (ScheduleService)map!["scheduleService"];
 
             settings.Update(scheduleService);
+            var triggerList = scheduleService.GetAllTriggers();
+
+            if (triggerList != null)
+                triggerList.ForEach(x => Console.WriteLine(x));
 
             Console.WriteLine($"Update-{DateTime.Now}");
         }
