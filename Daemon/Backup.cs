@@ -52,12 +52,12 @@ public class Backup
         if (Config.Status != true) return;
         if (Config.Destinations == null)
         {
-            this.client.PostReport(this.Config, false, "No assigned destinations.").GetAwaiter();
+            this.client.PostReport(this.Config, 'f', "No assigned destinations.").GetAwaiter();
             return;
         }
         if (Config.Sources == null)
         {
-            this.client.PostReport(this.Config, false, "No assigned sources.").GetAwaiter();
+            this.client.PostReport(this.Config, 'f', "No assigned sources.").GetAwaiter();
             return;
         }
 
@@ -135,13 +135,15 @@ public class Backup
             var client = new Client();
             client.AddSnapshot(Config.Id)!.GetAwaiter().GetResult();
         }
-        this.UploadReport(true);
+        this.UploadReport('t');
     }
-    public async void UploadReport(bool status = true)
+    public async void UploadReport(char status)
     {
         Client client = new Client();
 
-        string? serializedDesciption = nonFatalErrors.Count == 0 ? null : JsonConvert.SerializeObject(nonFatalErrors);
+        string? serializedDesciption = this.nonFatalErrors.Count == 0 ? null : JsonConvert.SerializeObject(this.nonFatalErrors);
+
+        status = this.nonFatalErrors.Count > 0 ? 'w' : 't';
 
         var uploaded = await client.PostReport(this.Config, status, serializedDesciption);
 

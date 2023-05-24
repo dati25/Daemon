@@ -143,7 +143,7 @@ public class Client
         // await this.client.PutAsJsonAsync(client.BaseAddress + "api/Snapthots");
     }
 
-    public async Task<bool> PostReport(Config config, bool status, string? description = null)
+    public async Task<bool> PostReport(Config config, char status, string? description = null)
     {
         var pc = this.settings.ReadPc();
 

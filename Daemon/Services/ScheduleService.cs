@@ -19,8 +19,8 @@ namespace Daemon.Services
             var builder = GetBuilder();
             var schedulerFactory = builder.Services.GetRequiredService<ISchedulerFactory>();
             this.scheduler = await schedulerFactory.GetScheduler();
-            
-                
+
+
 
             //await scheduler.DeleteJob(new JobKey("BackupJob", "DaemonJobs"));
             //await scheduler.DeleteJob(new JobKey("UdateJob, DaemonJobs"));
@@ -113,10 +113,7 @@ namespace Daemon.Services
             }
 
             if (!config.IsEqualConfig(activeConfig!))
-            {
                 await this.RescheduleTrigger(activeConfig!, config);
-                return;
-            }
 
         }
         public void DeleteUnassignedConfigs(List<Config> newConfigs)
