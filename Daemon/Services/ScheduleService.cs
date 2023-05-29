@@ -33,7 +33,7 @@ namespace Daemon.Services
             if (configs != null)
                 configs.ForEach(config => this.scheduler.ScheduleJob(job, this.GenerateTrigger(config)));
 
-            var jobs = this.scheduler.GetCurrentlyExecutingJobs();
+            //var jobs = this.scheduler.GetCurrentlyExecutingJobs();
 
             var updateJob = JobBuilder.Create<UpdateJob>()
                 .WithIdentity("UpdateJob", "DaemonJobs")
@@ -41,7 +41,7 @@ namespace Daemon.Services
                 .Build();
 
 
-            await scheduler.ScheduleJob(updateJob, this.GetSimpleTrigger("UpdateTrigger5min", "UpdateTriggers", 60));
+            await scheduler.ScheduleJob(updateJob, this.GetSimpleTrigger("UpdateTrigger5min", "UpdateTriggers", 30));
 
             await scheduler.Start();
             return builder;
@@ -104,10 +104,11 @@ namespace Daemon.Services
             Config? activeConfig = await this.GetTrigger(config);
             if (activeConfig == null)
             {
+                Console.WriteLine("here");
                 var jobKey = new JobKey("BackupJob", "DaemonJobs");
-                IJobDetail job = await this.scheduler.GetJobDetail(jobKey) ?? throw new ArgumentException();
+                IJobDetail? job = await this.scheduler.GetJobDetail(jobKey);
 
-                await this.scheduler.ScheduleJob(job!, this.GenerateTrigger(config));
+                this.scheduler.ScheduleJob(job!, this.GenerateTrigger(config)).GetAwaiter();
                 return;
             }
 
@@ -117,6 +118,7 @@ namespace Daemon.Services
         }
         public void DeleteUnassignedConfigs(List<Config> newConfigs)
         {
+            return; ///////////////////////////////bacha
             newConfigs.ForEach(config =>
             {
                 if (this.GetTrigger(config) == null)

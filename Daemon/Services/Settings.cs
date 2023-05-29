@@ -85,6 +85,7 @@ public class Settings
         {
             if (await client.Register() == null)
             {
+                /////////////////////////////////////
                 Console.WriteLine("Failed to login");
                 return;
             }
@@ -97,7 +98,7 @@ public class Settings
 
         configs.ForEach(config =>
         {
-            schedule.UpdateConfigTrigger(config);
+            schedule.UpdateConfigTrigger(config).GetAwaiter();
         });
 
         schedule.DeleteUnassignedConfigs(configs);

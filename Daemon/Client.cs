@@ -50,7 +50,7 @@ public class Client
 
             return pc;
         }
-        catch (HttpRequestException e)
+        catch (HttpRequestException)
         {
             Console.WriteLine("Connection error");
             return null;
