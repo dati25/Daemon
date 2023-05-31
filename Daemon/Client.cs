@@ -44,7 +44,7 @@ public class Client
         {
             var response = await client.PostAsJsonAsync(client.BaseAddress + "api/Computer", new Computer(physicalAddress.ToString(), ipv4Address!.ToString(), Environment.MachineName));
             var content = response.Content.ReadAsStringAsync().Result;
-            var pc = new Pc { idPc = int.Parse(content) };
+            var pc = new Pc { idPc = content };
 
             pc.Status = await this.GetPcStatus(pc);
 
@@ -112,7 +112,7 @@ public class Client
     {
         var snapshotService = new SnapshotService();
 
-        int idPc = this.settings.ReadPc()!.idPc;
+        string idPc = this.settings.ReadPc()!.idPc;
         string snapshot = snapshotService.ReadSnapshot(Path.Combine(SettingsConfig.SnapshotsPath, $"config_{configId}.txt"));
 
         //    var c = GetConfigs(GetPc().Result).Result!.FirstOrDefault(c => c.Id == configId);

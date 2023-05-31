@@ -16,20 +16,24 @@ namespace Daemon.Services
         }
 
 
-        public async void ConnectToFtp(FtpConfig ftpConfig)
+        public async void ConnectToFtp(FtpConfig ftpConfig, Source source)
         {
-             FtpWebRequest request = (FtpWebRequest)WebRequest.Create(ftpConfig.FilePath);
+            // FtpWebRequest request = (FtpWebRequest)WebRequest.Create(ftpConfig.FilePath);
 
-            request.Credentials = new NetworkCredential(ftpConfig.UserName, ftpConfig.Password);
-            request.Method = WebRequestMethods.Ftp.UploadFile;
+            //request.Credentials = new NetworkCredential(ftpConfig.UserName, ftpConfig.Password);
+            //request.Method = WebRequestMethods.Ftp.UploadFile;
 
-            using (var fileStream = File.Open("filePath", FileMode.Open))
-            {
-                using (var rs = request.GetRequestStream())
-                {
-                    await fileStream.CopyToAsync(rs);
-                }
-            }
+            //using (var fileStream = File.Open("filePath", FileMode.Open))
+            //{
+            //    using (var rs = request.GetRequestStream())
+            //    {
+            //        await fileStream.CopyToAsync(rs);
+            //    }
+            //}
+            WebClient client = new WebClient();
+            client.Credentials = new NetworkCredential(ftpConfig.UserName, ftpConfig.Password);
+            client.UploadFile(
+                $"ftp://{ftpConfig.FilePath}", source.Path);
 
         }
 

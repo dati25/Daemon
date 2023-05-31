@@ -10,12 +10,12 @@ namespace Daemon.Models
     {
         public int Id { get; set; }
         public int IdConfig { get; set; }
-        public int IdPc { get; set; }
+        public string IdPc { get; set; }
         public char Status { get; set; }
         public DateTime ReportTime { get; set; }
         public string? Description { get; set; }
 
-        public Report(int idPc, int idConfig, char status, DateTime reportTime, string? description)
+        public Report(string idPc, int idConfig, char status, DateTime reportTime, string? description)
         {
             this.IdPc = idPc;
             this.IdConfig = idConfig;
