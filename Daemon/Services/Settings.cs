@@ -101,7 +101,7 @@ public class Settings
             schedule.UpdateConfigTrigger(config).GetAwaiter();
         });
 
-        schedule.DeleteUnassignedConfigs(configs);
+        schedule.DeleteUnassignedConfigs();
         this.SaveConfigs(configs!);
 
         var pc = this.ReadPc();

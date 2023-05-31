@@ -125,18 +125,33 @@ namespace Daemon.Services
                 await this.RescheduleTrigger(activeConfig!, config);
 
         }
-        public void DeleteUnassignedConfigs(List<Config> newConfigs)
+        public void DeleteUnassignedConfigs()
         {
-            newConfigs.ForEach(config =>
+            Settings settings = new();
+            var newConfigs = settings.ReadConfigs();
+
+            if (newConfigs == null)
+                return;
+
+            if(newConfigs.Count == 0)
             {
-                if (this.GetTrigger(config) == null)
-                {
-                    var triggerKey = new TriggerKey($"{config.Name}({config.Id})", "ConfigTriggers");
-                    this.scheduler.UnscheduleJob(triggerKey);
-                }
-            });
+                this.GetAllTriggers().ForEach(trigger => this.scheduler.UnscheduleJob(trigger.Key));
+                return;
+            }
 
+            var activeTriggers = this.GetAllTriggers();
 
+            if (activeTriggers.Count == 0)
+                return;
+
+            foreach (var config in newConfigs)
+            {
+                var newTriggerKey = new TriggerKey($"{config.Name}({config.Id})", "ConfigTriggers");
+                if (activeTriggers.Any(trigger => trigger.Key.Name == newTriggerKey.Name))
+                    continue;
+
+                this.scheduler.UnscheduleJob(newTriggerKey);
+            }
         }
         private async Task RescheduleTrigger(Config activeConfig, Config newConfig)
         {
@@ -144,13 +159,12 @@ namespace Daemon.Services
             var triggerKey = new TriggerKey($"{activeConfig.Name}({activeConfig.Id})", "ConfigTriggers");
             await this.scheduler.RescheduleJob(triggerKey, this.GenerateTrigger(newConfig, job!));
         }
-        public List<string> GetAllTriggers()
+        public List<ITrigger> GetAllTriggers()
         {
             List<string> list = new();
             var jobKey = new JobKey("BackupJob", "DaemonJobs");
             var TriggerList = this.scheduler.GetTriggersOfJob(jobKey).Result;
-            TriggerList.ToList().ForEach(x => list.Add(x.Key.Name));
-            return list;
+            return TriggerList.ToList();
         }
     }
 }

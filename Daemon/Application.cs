@@ -19,8 +19,8 @@ namespace Daemon
 
         public async Task Run()
         {
-            //var c = new Client();
-            //await c.Register();
+            var c = new Client();
+            await c.Register();
 
 
             //if (configs == null)
@@ -29,7 +29,7 @@ namespace Daemon
             //    return;
             var schService = new ScheduleService();
 
-            this.s.Update(schService);
+            //this.s.Update(schService);
             var configs = s.ReadConfigs();
 
 

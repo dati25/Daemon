@@ -25,7 +25,7 @@ namespace Daemon.Services.Jobs
 
             if (triggerList.Count > 0)
             {
-                triggerList.ForEach(x => Console.WriteLine(x));
+                triggerList.ForEach(x => Console.WriteLine(x.Key.Name));
 
             }
             else
