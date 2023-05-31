@@ -19,16 +19,20 @@ namespace Daemon
 
         public async Task Run()
         {
-            var c = new Client();
-            await c.Register();
+            //var c = new Client();
+            //await c.Register();
 
-            var configs = s.ReadConfigs();
+
             //if (configs == null)
             //    return;
             //if(configs.Count !> 0)
             //    return;
-
             var schService = new ScheduleService();
+
+            this.s.Update(schService);
+            var configs = s.ReadConfigs();
+
+
             var builder = await schService.GenerateJobs(configs!);
             await builder.RunAsync();
 
