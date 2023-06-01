@@ -146,15 +146,17 @@ public class Backup
     {
         Client client = new Client();
 
-        string? serializedDesciption = this.nonFatalErrors.Count == 0 ? null : JsonConvert.SerializeObject(this.nonFatalErrors);
+        string? serializedDescription = this.nonFatalErrors.Count == 0 ? null : JsonConvert.SerializeObject(this.nonFatalErrors);
 
         status = this.nonFatalErrors.Count > 0 ? 'w' : 't';
 
-        var uploaded = await client.PostReport(this.Config, status, serializedDesciption);
+        var uploaded = await client.PostReport(this.Config, status, serializedDescription);
 
         if (!uploaded)
         {
             SettingsConfig.UploadReport = true;
+            var settings = new Settings();
+            settings.SaveReport(new Report(pc!.idPc, this.Config.Id, status, DateTime.Now, serializedDescription));
         }
     }
     private int GetBackupNumber(string path)

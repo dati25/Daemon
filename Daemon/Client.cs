@@ -3,6 +3,7 @@ using Newtonsoft.Json;
 using System.Net.Http.Json;
 using Daemon.Models;
 using Daemon.Services;
+using System.IO;
 
 namespace Daemon;
 public class Client
@@ -140,6 +141,7 @@ public class Client
 
         return await this.PostReport(new Report(pc!.idPc, config.Id, status, DateTime.Now, description));
     }
+
     public async Task<bool> PostReport(Report report)
     {
         try

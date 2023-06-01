@@ -21,6 +21,12 @@ namespace Daemon.Services.Jobs
 
             settings.Update(scheduleService);
 
+            if (SettingsConfig.UploadReport)
+            {
+                SettingsConfig.UploadReport = !settings.UploadConfigs();
+            }
+
+
             Console.WriteLine($"Update-{DateTime.Now}");
         }
     }

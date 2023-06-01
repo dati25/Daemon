@@ -1,5 +1,6 @@
 ﻿using Daemon.Models;
 using Newtonsoft.Json;
+using System.Runtime.CompilerServices;
 
 namespace Daemon.Services;
 public class Settings
@@ -29,10 +30,8 @@ public class Settings
 
         using (var sw = new StreamWriter(SettingsConfig.ReportsPath, true))
         {
-            if (new FileInfo("file").Length == 0)
-                sw.Write(';');
-            sw.WriteLine();
-            sw.Write(JsonConvert.SerializeObject(report));
+            string line = JsonConvert.SerializeObject(report);
+            sw.WriteLine(line);
         }
         return report;
     }
@@ -42,22 +41,14 @@ public class Settings
 
         using (var sr = new StreamReader(SettingsConfig.ReportsPath))
         {
-            var splitReports = sr.ReadToEnd().Split(';').ToList();
-
-            try
+            while (sr.EndOfStream)
             {
-                splitReports.ForEach(report => reports.Add(JsonConvert.DeserializeObject<Report>(report)!));
-            }
-            catch (Exception)
-            {
-                Console.WriteLine("Failed reports import");
-                return null;
+                var line= sr.ReadLine();
+                var report = JsonConvert.DeserializeObject<Report>(line!);   
+                reports.Add(report!);   
             }
             return reports;
         }
-
-
-
     }
     public List<Config>? SaveConfigs(List<Config>? configs)
     {
@@ -145,21 +136,30 @@ public class Settings
             pc.Status = newStatus;
             this.SavePc(pc);
         }
-
     }
-    private void UploadConfigs()
+    public bool UploadConfigs()
     {
         var client = new Client();
         var reports = this.ReadReports();
         
-        if (reports == null) return;
+        if (reports == null) return false;
 
-        Parallel.ForEach(reports, report =>
+        foreach (var report in reports)
         {
-            if (client.PostReport(report).GetAwaiter().GetResult())
+            if (!client.PostReport(report).GetAwaiter().GetResult())
             {
-                return;
+                return false;
             }
-        });
+        }
+        File.WriteAllText(SettingsConfig.ReportsPath, String.Empty);
+        return true;
     }
+    private Report GetReport(Config config, char status, string? description = null)
+    {
+        Settings settings = new();
+        var pc = settings.ReadPc();
+
+        return new Report(pc!.idPc, config.Id, status, DateTime.Now, description);
+    }
+
 }
