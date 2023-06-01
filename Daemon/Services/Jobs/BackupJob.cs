@@ -25,12 +25,9 @@ namespace Daemon.Services.Jobs
 
             var backup = new Backup(config, pc);
 
-
-            Console.WriteLine($"Backup-Config({config.Id})/{DateTime.Now}");
-            return;
             backup.Execute();
 
-            Console.WriteLine($"Backup-Config({config.Id})/{DateTime.Now}");
+            Console.WriteLine($"Backup-{config.Name}({config.Id})/{DateTime.Now}");
         }
     }
 }

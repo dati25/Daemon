@@ -12,7 +12,7 @@ public class Config
     public bool? Compress { get; set; } // Default false
     public int? Retention { get; set; } // null = unlimitied
     public int? PackageSize { get; set; } // null = unlimited
-    public bool? Status { get; set; }  //Default false (turned off) 
+    public bool Status { get; set; }  //Default false (turned off) 
     [ForeignKey("IdConfig")] public List<Source>? Sources { get; set; }
     [ForeignKey("IdConfig")] public List<Destination>? Destinations { get; set; }
 }

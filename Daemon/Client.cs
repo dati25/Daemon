@@ -52,7 +52,6 @@ public class Client
         }
         catch (HttpRequestException)
         {
-            Console.WriteLine("Connection error");
             return null;
         }
     }
@@ -133,23 +132,19 @@ public class Client
             return null;
 
         return JsonConvert.DeserializeObject<Snapshot>(await response.Content.ReadAsStringAsync());
-        //    try
-        //    {
-        //        var response = await client.PutAsJsonAsync(client.BaseAddress + $"api/Config/{configId}", ts);
-        //    }
-        //    catch { }
-        //}
-
-        // await this.client.PutAsJsonAsync(client.BaseAddress + "api/Snapthots");
     }
 
     public async Task<bool> PostReport(Config config, char status, string? description = null)
     {
         var pc = this.settings.ReadPc();
 
+        return await this.PostReport(new Report(pc!.idPc, config.Id, status, DateTime.Now, description));
+    }
+    public async Task<bool> PostReport(Report report)
+    {
         try
         {
-            var response = await client.PostAsJsonAsync(client.BaseAddress + "api/Report", new Report(pc!.idPc, config.Id, status, DateTime.Now, description));
+            var response = await client.PostAsJsonAsync(client.BaseAddress + "api/Report", report);
             return response.IsSuccessStatusCode;
         }
         catch (Exception) { return false; }

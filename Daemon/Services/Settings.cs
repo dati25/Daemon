@@ -19,7 +19,46 @@ public class Settings
 
         return pc;
     }
+    public Report? SaveReport(Report report)
+    {
+        if (!Directory.Exists(SettingsConfig.SettingsDir))
+            Directory.CreateDirectory(SettingsConfig.SettingsDir);
 
+        if (File.Exists(SettingsConfig.ReportsPath))
+            File.Delete(SettingsConfig.ReportsPath);
+
+        using (var sw = new StreamWriter(SettingsConfig.ReportsPath, true))
+        {
+            if (new FileInfo("file").Length == 0)
+                sw.Write(';');
+            sw.WriteLine();
+            sw.Write(JsonConvert.SerializeObject(report));
+        }
+        return report;
+    }
+    public List<Report>? ReadReports()
+    {
+        var reports = new List<Report>();
+
+        using (var sr = new StreamReader(SettingsConfig.ReportsPath))
+        {
+            var splitReports = sr.ReadToEnd().Split(';').ToList();
+
+            try
+            {
+                splitReports.ForEach(report => reports.Add(JsonConvert.DeserializeObject<Report>(report)!));
+            }
+            catch (Exception)
+            {
+                Console.WriteLine("Failed reports import");
+                return null;
+            }
+            return reports;
+        }
+
+
+
+    }
     public List<Config>? SaveConfigs(List<Config>? configs)
     {
         if (configs == null) return ReadConfigs();
@@ -35,14 +74,14 @@ public class Settings
         configs.ForEach(c => jsons.Add(JsonConvert.SerializeObject(c, Formatting.Indented)));
 
         var json = string.Join(",\n", jsons);
-        using var sw = new StreamWriter(SettingsConfig.ConfigsPath, true);
-        sw.WriteLine("[");
-        sw.WriteLine(json);
-        sw.WriteLine("]");
-
+        using (var sw = new StreamWriter(SettingsConfig.ConfigsPath, true))
+        {
+            sw.WriteLine("[");
+            sw.WriteLine(json);
+            sw.WriteLine("]");
+        }
         return configs;
     }
-
     public Pc? ReadPc()
     {
         if (!File.Exists(SettingsConfig.PcPath))
@@ -54,7 +93,6 @@ public class Settings
 
         return JsonConvert.DeserializeObject<Pc>(json);
     }
-
     public List<Config>? ReadConfigs()
     {
         if (!File.Exists(SettingsConfig.ConfigsPath))
@@ -66,7 +104,6 @@ public class Settings
 
         return JsonConvert.DeserializeObject<List<Config>>(json);
     }
-
     public void Save(Pc? pc, List<Config>? configs)
     {
         if (pc == null || configs == null) return;
@@ -81,14 +118,10 @@ public class Settings
     {
         Client client = new Client();
 
-        if(this.ReadPc() == null)
+        if (this.ReadPc() == null)
         {
             if (await client.Register() == null)
-            {
-                /////////////////////////////////////
-                Console.WriteLine("Failed to login");
                 return;
-            }
         }
 
         List<Config>? configs = client.GetConfigs(this.ReadPc()).GetAwaiter().GetResult()!;
@@ -105,7 +138,7 @@ public class Settings
         this.SaveConfigs(configs!);
 
         var pc = this.ReadPc();
-        if(pc == null) return;
+        if (pc == null) return;
         var newStatus = client.GetPcStatus(pc!).GetAwaiter().GetResult();
         if (pc!.Status != newStatus && pc!.Status != null)
         {
@@ -113,5 +146,20 @@ public class Settings
             this.SavePc(pc);
         }
 
+    }
+    private void UploadConfigs()
+    {
+        var client = new Client();
+        var reports = this.ReadReports();
+        
+        if (reports == null) return;
+
+        Parallel.ForEach(reports, report =>
+        {
+            if (client.PostReport(report).GetAwaiter().GetResult())
+            {
+                return;
+            }
+        });
     }
 }

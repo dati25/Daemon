@@ -57,7 +57,7 @@ namespace Daemon.Services
             string repeatPeriod = string.Join(" ", repPer);
 
             var trigger = TriggerBuilder.Create()
-                    .WithIdentity($"{config.Name}({config.Id})", "ConfigTriggers")
+                    .WithIdentity($"Config({config.Id})", "ConfigTriggers")
                     .WithCronSchedule("0 " + repeatPeriod)
                     .EndAt(DateTime.Parse(config.ExpirationDate!))
                     .UsingJobData(new JobDataMap(new Dictionary<string, Config> { { "config", config } }))
@@ -94,7 +94,7 @@ namespace Daemon.Services
         }
         private async Task<Config?> GetTrigger(Config config)
         {
-            var triggerKey = new TriggerKey($"{config.Name}({config.Id})", "ConfigTriggers");
+            var triggerKey = new TriggerKey($"Config({config.Id})", "ConfigTriggers");
 
             var trigger = await this.scheduler.GetTrigger(triggerKey);
             if (trigger == null)
@@ -114,7 +114,6 @@ namespace Daemon.Services
             Config? activeConfig = await this.GetTrigger(config);
             if (activeConfig == null)
             {
-                Console.WriteLine("here");
                 var job = await this.GetJob();
 
                 this.scheduler.ScheduleJob(this.GenerateTrigger(config, job!)).GetAwaiter();
@@ -146,7 +145,7 @@ namespace Daemon.Services
 
             foreach (var config in newConfigs)
             {
-                var newTriggerKey = new TriggerKey($"{config.Name}({config.Id})", "ConfigTriggers");
+                var newTriggerKey = new TriggerKey($"Config({config.Id})", "ConfigTriggers");
                 if (activeTriggers.Any(trigger => trigger.Key.Name == newTriggerKey.Name))
                     continue;
 
@@ -156,7 +155,7 @@ namespace Daemon.Services
         private async Task RescheduleTrigger(Config activeConfig, Config newConfig)
         {
             var job = await this.GetJob();
-            var triggerKey = new TriggerKey($"{activeConfig.Name}({activeConfig.Id})", "ConfigTriggers");
+            var triggerKey = new TriggerKey($"Config({activeConfig.Id})", "ConfigTriggers");
             await this.scheduler.RescheduleJob(triggerKey, this.GenerateTrigger(newConfig, job!));
         }
         public List<ITrigger> GetAllTriggers()

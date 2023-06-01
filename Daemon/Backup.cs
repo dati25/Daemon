@@ -3,6 +3,7 @@ using Daemon.Models;
 using System.IO.Compression;
 using System.Dynamic;
 using Newtonsoft.Json;
+using System.Runtime.InteropServices;
 
 namespace Daemon;
 public class Backup
@@ -49,7 +50,11 @@ public class Backup
     private void DoBackup(bool create = false, bool update = false)
     {
         if (Config.ExpirationDate != null && DateTime.Parse(Config.ExpirationDate) < DateTime.Now) return;
-        if (Config.Status != true) return;
+        if (!Config.Status)
+        {
+            Console.WriteLine("Wrong status");
+            return;
+        }
         if (Config.Destinations == null)
         {
             this.client.PostReport(this.Config, 'f', "No assigned destinations.").GetAwaiter();
@@ -148,7 +153,9 @@ public class Backup
         var uploaded = await client.PostReport(this.Config, status, serializedDesciption);
 
         if (!uploaded)
-            return;//Zapsat Report do textaku
+        {
+            SettingsConfig.UploadReport = true;
+        }
     }
     private int GetBackupNumber(string path)
     {
@@ -210,9 +217,5 @@ public class Backup
             File.Delete(path + ".zip");
         else if (Directory.Exists(path))
             Directory.Delete(path, true);
-    }
-    private void CopySource(Source source)
-    {
-
     }
 }
