@@ -23,7 +23,7 @@ namespace Daemon.Services.Jobs
 
             if (SettingsConfig.UploadReport)
             {
-                SettingsConfig.UploadReport = !settings.UploadConfigs();
+                SettingsConfig.UploadReport = !settings.UploadReports();
             }
 
 

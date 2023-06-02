@@ -25,9 +25,6 @@ public class Settings
         if (!Directory.Exists(SettingsConfig.SettingsDir))
             Directory.CreateDirectory(SettingsConfig.SettingsDir);
 
-        if (File.Exists(SettingsConfig.ReportsPath))
-            File.Delete(SettingsConfig.ReportsPath);
-
         using (var sw = new StreamWriter(SettingsConfig.ReportsPath, true))
         {
             string line = JsonConvert.SerializeObject(report);
@@ -41,7 +38,7 @@ public class Settings
 
         using (var sr = new StreamReader(SettingsConfig.ReportsPath))
         {
-            while (sr.EndOfStream)
+            while (!sr.EndOfStream)
             {
                 var line= sr.ReadLine();
                 var report = JsonConvert.DeserializeObject<Report>(line!);   
@@ -137,12 +134,12 @@ public class Settings
             this.SavePc(pc);
         }
     }
-    public bool UploadConfigs()
+    public bool UploadReports()
     {
         var client = new Client();
         var reports = this.ReadReports();
         
-        if (reports == null) return false;
+        if (reports!.Count == 0) return false;
 
         foreach (var report in reports)
         {
