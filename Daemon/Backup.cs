@@ -9,7 +9,7 @@ namespace Daemon;
 public class Backup
 {
     private Config Config { get; set; }
-    private Pc pc { get; set; } 
+    private Pc pc { get; set; }
     private List<string> DestPaths { get; }
     private Client client = new();
 
@@ -66,6 +66,7 @@ public class Backup
             return;
         }
 
+        var wrongSources = this.CheckSourcesExistence(Config.Sources);
 
         foreach (var dest in DestPaths)
         {
@@ -83,12 +84,11 @@ public class Backup
             var snapshotPath = Path.Combine(SettingsConfig.SnapshotsPath, $"config_{Config.Id}.txt");
 
             //Jestli existuji sources, pokud ne, vyhodi chybovou hlasku a cestu odstrani z Configu(jenom tehle tridy, ne z dat)
-            var wrongSources = this.CheckSourcesExistence(Config.Sources);
             if (wrongSources.Count > 0)
                 wrongSources.ForEach(source =>
                 {
                     nonFatalErrors.Add($"Source(Id:{source}) does not exist.");
-                    Config.Sources.Remove(Config.Sources.Where(configSource => configSource.Id == source).First());
+                    Config.Sources.Remove(Config.Sources.Where(configSource => configSource.Id == source.Id).First());
                 });
 
             //Pokud neexistuje, vlezt na databazi metoda client.GetSnapshot();
@@ -140,21 +140,25 @@ public class Backup
             var client = new Client();
             client.AddSnapshot(Config.Id)!.GetAwaiter().GetResult();
         }
+
+        wrongSources.ForEach(source => this.Config.Sources.Add(source));
         this.UploadReport('t');
     }
     public async void UploadReport(char status)
     {
         Client client = new Client();
 
-        string? serializedDesciption = this.nonFatalErrors.Count == 0 ? null : JsonConvert.SerializeObject(this.nonFatalErrors);
+        string? serializedDescription = this.nonFatalErrors.Count == 0 ? null : JsonConvert.SerializeObject(this.nonFatalErrors);
 
         status = this.nonFatalErrors.Count > 0 ? 'w' : 't';
 
-        var uploaded = await client.PostReport(this.Config, status, serializedDesciption);
+        var uploaded = await client.PostReport(this.Config, status, serializedDescription);
 
         if (!uploaded)
         {
             SettingsConfig.UploadReport = true;
+            var settings = new Settings();
+            settings.SaveReport(new Report(pc!.idPc, this.Config.Id, status, DateTime.Now, serializedDescription));
         }
     }
     private int GetBackupNumber(string path)
@@ -201,13 +205,13 @@ public class Backup
 
         return fileCount > dirCount ? fileCount : dirCount;
     }
-    private List<int> CheckSourcesExistence(List<Source> sources)
+    private List<Source> CheckSourcesExistence(List<Source> sources)
     {
-        List<int> results = new();
+        List<Source> results = new();
         foreach (var source in sources)
         {
             if (!Directory.Exists(source.Path) && !File.Exists(source.Path))
-                results.Add(source.Id);
+                results.Add(source);
         }
         return results;
     }
