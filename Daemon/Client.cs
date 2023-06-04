@@ -10,12 +10,13 @@ namespace Daemon;
 public class Client
 {
     private readonly HttpClient client = new() { BaseAddress = new Uri("http://localhost:5105/") };
+
     private Settings settings = new();
     public async Task Register()
     {
         var s = new Settings();
 
-        this.pc = s.SavePc(await GetPc());
+        var pc = s.SavePc(await GetPc());
         var configs = s.SaveConfigs(await GetConfigs(pc));
 
         s.Save(pc, configs);
@@ -52,10 +53,13 @@ public class Client
     public async Task<char?> GetPcStatus(Pc pc)
     {
          var response = await this.client.GetAsync(client.BaseAddress + $"api/Sessions/{pc.idPc}");
+
         var content = response.Content.ReadAsStringAsync().Result;
             var stringStatus = JsonConvert.DeserializeObject<string>(content);
+
         if (stringStatus == null)
             return null;
+
         return Convert.ToChar(stringStatus);
     }
     public async Task<List<Config>?> GetConfigs(Pc? pc)
@@ -118,16 +122,16 @@ public class Client
         if (!response.IsSuccessStatusCode)
             return null;
 
-        //    try
-        //    {
-        //        var response = await client.PutAsJsonAsync(client.BaseAddress + $"api/Config/{configId}", ts);
-        //    }
-        //    catch { }
-        //}
-
-        await this.client.PutAsJsonAsync(client.BaseAddress + "api/Snapthots")
-    }
-    public async Task<bool> PostReport(Config config, bool status, string? description = null)
+		//    try
+		//    {
+		//        var response = await client.PutAsJsonAsync(client.BaseAddress + $"api/Config/{configId}", ts);
+		//    }
+		//    catch { }
+		//}
+		return JsonConvert.DeserializeObject<Snapshot>(await response.Content.ReadAsStringAsync());
+		//await this.client.PutAsJsonAsync(this.client.BaseAddress + "api/Snapthots", Snapshot );
+	}
+    public async Task<bool> PostReport(Config config, char status, string? description = null)
     {
         var pc = this.settings.ReadPc();
 

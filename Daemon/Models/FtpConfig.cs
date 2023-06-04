@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Daemon.Models
 {
-    public class FtpConfig
+    public class _FtpConfig
     {
         //ftp://<user>:<password>@<host>:<port>//<folder>
         public string UserName { get; set; }
@@ -16,9 +16,9 @@ namespace Daemon.Models
         public string Port { get; set; }
         public string FilePath { get; set; }
 
-        public FtpConfig(string ftpConfig)
-        {
-            var match = Regex.Match(ftpConfig, @"^ftp://(?<user>[a-zA-Z\.\-_]+):(?<password>.[^@]+)\@(?<host>[1-9\.]+):(?<port>\d+)//(?<filePath>.+)$");
+        public _FtpConfig(string ftpConfig)
+       {
+            var match = Regex.Match(ftpConfig, @"^ftp://(?<user>[a-zA-Z\.\-_]+):(?<password>.[^@]+)\@(?<host>[0-9\.]+):(?<port>\d+)//(?<filePath>.*)");
             this.UserName = match.Groups["user"].Value;
             this.Password = match.Groups["password"].Value;
             this.Host = match.Groups["host"].Value;

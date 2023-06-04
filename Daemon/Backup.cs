@@ -9,7 +9,9 @@ public class Backup
 {
     private Config Config { get; set; }
     private Pc pc { get; set; } 
+    private List<Destination> destinations { get; }
     private List<string> DestPaths { get; }
+    private List<bool> DestPathsTypes { get; }
     private Client client = new();
 
     private List<string> nonFatalErrors = new();
@@ -21,7 +23,9 @@ public class Backup
     {
         Config = config;
         this.pc = pc;
-        DestPaths = config.Destinations!.Select(x => Path.Combine(x.Path!, "FooBakCup", $"config_{config.Id}")).ToList();
+        DestPaths = config.Destinations!.Select(x => x.Path).ToList(); 
+		DestPathsTypes = config.Destinations!.Select(x => x.Type).ToList();
+
     }
     public void Execute()
     {
@@ -52,28 +56,44 @@ public class Backup
         if (Config.Status != true) return;
         if (Config.Destinations == null)
         {
-            this.client.PostReport(this.Config, false, "No assigned destinations.").GetAwaiter();
+            this.client.PostReport(this.Config, 'f', "No assigned destinations.").GetAwaiter();
             return;
         }
         if (Config.Sources == null)
         {
-            this.client.PostReport(this.Config, false, "No assigned sources.").GetAwaiter();
+            this.client.PostReport(this.Config, 'f', "No assigned sources.").GetAwaiter();
             return;
         }
 
-
-        foreach (var dest in DestPaths)
+		int index = 0;
+		foreach (var dest in DestPaths)
         {
-            int backupNumber = GetBackupNumber(dest);
-            var destPath = Path.Combine(dest, "backup_" + backupNumber);
-            Directory.CreateDirectory(destPath);
+            bool destType = DestPathsTypes[index];
 
-            var retentionBackupNumber = backupNumber - Config.Retention;
-            if (retentionBackupNumber >= 0)
+            if (destType == true)
             {
+                _FtpConfig _ftpConfig = new _FtpConfig(dest);
+                FtpService ftp = new FtpService(_ftpConfig, this.Config);
+                foreach (var src in Config.Sources)
+                {
+                    ftp.DoFtp(src);
+                }
+
+			}
+			else
+            {
+
+                int backupNumber = GetBackupNumber(dest);
+                var destPath = Path.Combine(dest, "FooBakCup", $"config_{this.Config.Id}", "backup_" + backupNumber);
+                Directory.CreateDirectory(destPath);
+            
+                var retentionBackupNumber = backupNumber - Config.Retention;
+                if (retentionBackupNumber >= 0)
+                {
                 var retentionBackupPath = Path.Combine(dest, "backup_" + retentionBackupNumber);
                 DeleteBackup(retentionBackupPath);
-            }
+                }
+            
 
             var snapshotPath = Path.Combine(SettingsConfig.SnapshotsPath, $"config_{Config.Id}.txt");
 
@@ -112,8 +132,8 @@ public class Backup
                 Directory.Delete(destPath, true);
             }
         }
-
-        if (create)
+		}
+		if (create)
         {
             var snapshotPath = Path.Combine(SettingsConfig.SnapshotsPath, $"config_{Config.Id}.txt");
 
@@ -134,10 +154,11 @@ public class Backup
 
             var client = new Client();
             client.AddSnapshot(Config.Id)!.GetAwaiter().GetResult();
+            
         }
-        this.UploadReport(true);
+        this.UploadReport('t');
     }
-    public async void UploadReport(bool status = true)
+    public async void UploadReport(char status = 't')
     {
         Client client = new Client();
 
@@ -192,6 +213,7 @@ public class Backup
 
         return fileCount > dirCount ? fileCount : dirCount;
     }
+
     private List<int> CheckSourcesExistence(List<Source> sources)
     {
         List<int> results = new();
