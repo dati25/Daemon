@@ -13,7 +13,7 @@ namespace Daemon.Services
     {
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
         private IScheduler scheduler;
-#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
+#pragma warning restore CS8618
         public async Task<IHost> GenerateJobs(List<Config> configs)
         {
             var builder = GetBuilder();
@@ -52,19 +52,14 @@ namespace Daemon.Services
         }
         public ITrigger GenerateTrigger(Config config, IJobDetail job)
         {
-            string[] repPer = config.RepeatPeriod!.Split(' ');
-
-            string repeatPeriod = string.Join(" ", repPer);
-
-            var trigger = TriggerBuilder.Create()
+            return TriggerBuilder.Create()
                     .WithIdentity($"Config({config.Id})", "ConfigTriggers")
-                    .WithCronSchedule("0 " + repeatPeriod)
+                    .WithCronSchedule("0 " + config.RepeatPeriod)
                     .EndAt(DateTime.Parse(config.ExpirationDate!))
                     .UsingJobData(new JobDataMap(new Dictionary<string, Config> { { "config", config } }))
                     .ForJob(job)
+                    .WithPriority(1)
                     .Build();
-
-            return trigger;
         }
         public ITrigger GetSimpleTrigger(string triggerName, string groupName, int intervalSec, int repeatCount = -1)
         {
