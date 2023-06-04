@@ -13,14 +13,13 @@ namespace Daemon.Services
     {
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
         private IScheduler scheduler;
-#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
+#pragma warning restore CS8618
         public async Task<IHost> GenerateJobs(List<Config> configs)
         {
             var builder = GetBuilder();
             var schedulerFactory = builder.Services.GetRequiredService<ISchedulerFactory>();
             this.scheduler = await schedulerFactory.GetScheduler();
-            
-                
+
 
             //await scheduler.DeleteJob(new JobKey("BackupJob", "DaemonJobs"));
             //await scheduler.DeleteJob(new JobKey("UdateJob, DaemonJobs"));
@@ -30,35 +29,42 @@ namespace Daemon.Services
                     .StoreDurably()
                     .Build();
 
-            configs.ForEach(config => this.scheduler.ScheduleJob(job, this.GenerateTrigger(config)));
+            await this.scheduler.AddJob(job, true);
 
-            var jobs = this.scheduler.GetCurrentlyExecutingJobs();
+            if (configs != null)
+                configs.ForEach(config =>
+                {
+                    this.scheduler.ScheduleJob(this.GenerateTrigger(config, job));
+                    Console.WriteLine(config.Name);
+                });
+
+            //var jobs = this.scheduler.GetCurrentlyExecutingJobs();
 
             var updateJob = JobBuilder.Create<UpdateJob>()
                 .WithIdentity("UpdateJob", "DaemonJobs")
                 .StoreDurably()
                 .Build();
 
+            await scheduler.ScheduleJob(updateJob, this.GetSimpleTrigger($"UpdateTrigger5min", "UpdateTriggers", 30));
 
-            await scheduler.ScheduleJob(updateJob, this.GetSimpleTrigger("UpdateTrigger5min", "UpdateTriggers", 60));
+            await this.scheduler.Start();
             return builder;
         }
-        public ITrigger GenerateTrigger(Config config)
+        public ITrigger GenerateTrigger(Config config, IJobDetail job)
         {
-            var trigger = TriggerBuilder.Create()
-                    .WithIdentity($"{config.Name}({config.Id})", "ConfigTriggers")
-                    .WithCronSchedule("0 " + config.RepeatPeriod!)
+            return TriggerBuilder.Create()
+                    .WithIdentity($"Config({config.Id})", "ConfigTriggers")
+                    .WithCronSchedule("0 " + config.RepeatPeriod)
                     .EndAt(DateTime.Parse(config.ExpirationDate!))
                     .UsingJobData(new JobDataMap(new Dictionary<string, Config> { { "config", config } }))
+                    .ForJob(job)
+                    .WithPriority(1)
                     .Build();
-
-            return trigger;
         }
         public ITrigger GetSimpleTrigger(string triggerName, string groupName, int intervalSec, int repeatCount = -1)
         {
             return TriggerBuilder.Create()
                 .WithIdentity(triggerName, groupName)
-                .StartNow()
                 .WithSimpleSchedule(x => x
                 .WithIntervalInSeconds(intervalSec)
                 .WithRepeatCount(repeatCount))
@@ -83,50 +89,76 @@ namespace Daemon.Services
         }
         private async Task<Config?> GetTrigger(Config config)
         {
-            var triggerKey = new TriggerKey($"{config.Name}({config.Id})", "ConfigTriggers");
+            var triggerKey = new TriggerKey($"Config({config.Id})", "ConfigTriggers");
 
             var trigger = await this.scheduler.GetTrigger(triggerKey);
+            if (trigger == null)
+                return null;
 
             var map = trigger!.JobDataMap as IDictionary<string, object>;
 
             return (Config)map!["config"];
         }
-        public async void UpdateConfigTrigger(Config config)
+        private async Task<IJobDetail?> GetJob()
+        {
+            var jobKey = new JobKey("BackupJob", "DaemonJobs");
+            return await this.scheduler.GetJobDetail(jobKey)!;
+        }
+        public async Task UpdateConfigTrigger(Config config)
         {
             Config? activeConfig = await this.GetTrigger(config);
             if (activeConfig == null)
             {
-                var jobKey = new JobKey("BackupJob", "DaemonJobs");
-                IJobDetail job = await this.scheduler.GetJobDetail(jobKey) ?? throw new ArgumentException();
+                var job = await this.GetJob();
 
-                await this.scheduler.ScheduleJob(job!, this.GenerateTrigger(config));
+                this.scheduler.ScheduleJob(this.GenerateTrigger(config, job!)).GetAwaiter();
                 return;
             }
 
             if (!config.IsEqualConfig(activeConfig!))
+                await this.RescheduleTrigger(activeConfig!, config);
+
+        }
+        public void DeleteUnassignedConfigs()
+        {
+            Settings settings = new();
+            var newConfigs = settings.ReadConfigs();
+
+            if (newConfigs == null)
+                return;
+
+            if(newConfigs.Count == 0)
             {
-                this.RescheduleTrigger(activeConfig!, config);
+                this.GetAllTriggers().ForEach(trigger => this.scheduler.UnscheduleJob(trigger.Key));
                 return;
             }
 
-        }
-        public void DeleteUnassignedConfigs(List<Config> newConfigs)
-        {
-            newConfigs.ForEach(config =>
+            var activeTriggers = this.GetAllTriggers();
+
+            if (activeTriggers.Count == 0)
+                return;
+
+            foreach (var config in newConfigs)
             {
-                if (this.GetTrigger(config) == null)
-                {
-                    var triggerKey = new TriggerKey($"{config.Name}({config.Id})", "ConfigTriggers");
-                    this.scheduler.UnscheduleJob(triggerKey);
-                }
-            });
+                var newTriggerKey = new TriggerKey($"Config({config.Id})", "ConfigTriggers");
+                if (activeTriggers.Any(trigger => trigger.Key.Name == newTriggerKey.Name))
+                    continue;
 
-
+                this.scheduler.UnscheduleJob(newTriggerKey);
+            }
         }
-        private async void RescheduleTrigger(Config activeConfig, Config newConfig)
+        private async Task RescheduleTrigger(Config activeConfig, Config newConfig)
         {
-            var triggerKey = new TriggerKey($"{activeConfig.Name}({activeConfig.Id})", "ConfigTriggers");
-            await this.scheduler.RescheduleJob(triggerKey, this.GenerateTrigger(newConfig));
+            var job = await this.GetJob();
+            var triggerKey = new TriggerKey($"Config({activeConfig.Id})", "ConfigTriggers");
+            await this.scheduler.RescheduleJob(triggerKey, this.GenerateTrigger(newConfig, job!));
+        }
+        public List<ITrigger> GetAllTriggers()
+        {
+            List<string> list = new();
+            var jobKey = new JobKey("BackupJob", "DaemonJobs");
+            var TriggerList = this.scheduler.GetTriggersOfJob(jobKey).Result;
+            return TriggerList.ToList();
         }
     }
 }

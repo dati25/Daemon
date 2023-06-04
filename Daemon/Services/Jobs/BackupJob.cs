@@ -14,7 +14,7 @@ namespace Daemon.Services.Jobs
     {
 #pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
         public async Task Execute(IJobExecutionContext context)
-#pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
+#pragma warning restore CS1998
         {
             var map = context.MergedJobDataMap as IDictionary<string, object>;
             var config = (Config)map["config"];
@@ -27,8 +27,7 @@ namespace Daemon.Services.Jobs
 
             backup.Execute();
 
-            Console.WriteLine($"Backup-Config({config.Id})/{DateTime.Now}");
-            
+            Console.WriteLine($"Backup-{config.Name}({config.Id})/{DateTime.Now}");
         }
     }
 }
